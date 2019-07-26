@@ -85,17 +85,7 @@ int main(void) {
 		clCheckError(ret);
 		exit(1);
 	}
-
-	char buf[128];
-	clGetDeviceInfo(device_id, CL_DEVICE_NAME, 128, buf, NULL);
-	fprintf(stdout, "Device %s supports.\n", buf);
-
 	printPlatformName(platform_id[0]);
- 
-    if(ret != CL_SUCCESS){
-		clCheckError(ret);
-		exit(1);
-	}
 
     ret = clGetDeviceIDs( platform_id[0], CL_DEVICE_TYPE_DEFAULT, 1, 
             &device_id, &ret_num_devices);
@@ -123,12 +113,14 @@ int main(void) {
 		clCheckError(ret);
 		exit(1);
 	}
+	
+	// clear out the buffer for printing
 	std::memset(buf, 0, sizeof buf);
 	clGetDeviceInfo(device_id, CL_DEVICE_NAME, 128, buf, NULL);
 	fprintf(stdout, "Using %s for context device.\n", buf);
 	
  
-    // Create a command queue
+    // Create a command queue for issuing commands to the device
     cl_command_queue command_queue = clCreateCommandQueue(context, device_id, 0, &ret);
     if(ret != CL_SUCCESS){
 		clCheckError(ret);
@@ -148,6 +140,7 @@ int main(void) {
 		clCheckError(ret);
 		exit(1);
 	}
+	// This will be written into by the kernel, and we will read that back out
     cl_mem c_mem_obj = clCreateBuffer(context, CL_MEM_WRITE_ONLY, 
             LIST_SIZE * sizeof(int), NULL, &ret);
     if(ret != CL_SUCCESS){
@@ -184,6 +177,7 @@ int main(void) {
 	}
  
     // Set the arguments of the kernel
+	// Second paramater is the parameter index in the kernel
     ret = clSetKernelArg(kernel, 0, sizeof(cl_mem), (void *)&a_mem_obj);
     if(ret != CL_SUCCESS){
 		clCheckError(ret);
@@ -194,12 +188,15 @@ int main(void) {
 		clCheckError(ret);
 		exit(1);
 	}
+	// We're going to write into this in the kernel
     ret = clSetKernelArg(kernel, 2, sizeof(cl_mem), (void *)&c_mem_obj);
 	clCheckError(ret);
  
     // Execute the OpenCL kernel on the list
     size_t global_item_size = LIST_SIZE; // Process the entire lists
-    size_t local_item_size = 32; // Divide work items into groups of 64
+    size_t local_item_size = 64; // Divide work items into groups of 64. This should actually query the device for the max group size
+	
+	// Create and issue the commands to the device. The list is broken up into (LIST_SIZE / local_item_size) work groups
     ret = clEnqueueNDRangeKernel(command_queue, kernel, 1, NULL, 
             &global_item_size, &local_item_size, 0, NULL, NULL);
 	clCheckError(ret);
@@ -211,6 +208,7 @@ int main(void) {
 	clCheckError(ret);
  
     // Display the result to the screen
+	// Everything should be 1024
     //for(i = 0; i < LIST_SIZE; i++)
      //   printf("%d + %d = %d\n", A[i], B[i], C[i]);
  
