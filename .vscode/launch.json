@@ -1,0 +1,45 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "inputs": [
+        {
+            "id": "projectFolder",
+            "type": "pickString",
+            "default": "part_2",
+            "description": "Folder that you want to build.",
+            "options": [
+                "part_2",
+                "naive_approach",
+                "summing_numbers"
+            ]
+        }
+    ],
+    "configurations": [
+        {
+            "name": "(gbd) Launch",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/${input:projectFolder}/build/bin/main.exe",
+            "args": [
+            ],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/${input:projectFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "miDebuggerPath": "F:/dev/msys64/mingw64/bin/gdb.exe",
+            "setupCommands": [
+                 
+            ]
+        },
+        {
+            "name": "Python: Current File",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal"
+        }
+    ]
+}

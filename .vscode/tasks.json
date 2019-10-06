@@ -1,0 +1,53 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Build part 2",
+            "group": "build",
+            "type": "shell",
+            "windows": {
+                "options": {
+                    "env": {
+                        "PATH": "${config:user.mingw-w64-path}\\bin;${config:user.mingw-w64-path}\\x86_64-w64-mingw32\\bin;C:\\Windows\\System32",
+                        "CC": "clang",
+                        "CXX": "clang++"
+                    },
+                    "cwd": "${workspaceFolder}/${input:projectFolder}/build"
+                },
+                "command": "ninja"
+            },
+            "problemMatcher": [
+                "$gcc"
+            ]
+        },
+        {
+            "label": "Run cmake",
+            "group": "build",
+            "type": "shell",
+            "windows": {
+                "options": {
+                    "env": {
+                        "PATH": "${config:user.mingw-w64-path}\\bin;${config:user.mingw-w64-path}\\x86_64-w64-mingw32\\bin;C:\\Windows\\System32",
+                        "CC": "clang",
+                        "CXX": "clang++"
+                    },
+                    "cwd": "${workspaceFolder}/${input:projectFolder}/build"
+                },
+                "command": "cmake -G Ninja ..",
+            }
+        }
+    ],
+    "inputs": [
+        {
+            "id": "projectFolder",
+            "type": "pickString",
+            "default": "part_2",
+            "description": "Folder that you want to build.",
+            "options": [
+                "part_2",
+                "naive_approach",
+                "summing_numbers"
+            ]
+        }
+    ]
+}
