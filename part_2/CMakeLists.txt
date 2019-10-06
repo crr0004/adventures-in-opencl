@@ -14,12 +14,12 @@ endif()
 
 ############################################################################
 # Find OpenCL include and libs
-message(STATUS ${CRR_OPENCL_INCLUDE_PATH})
 find_path( OPENCL_INCLUDE_DIRS 
 NAMES OpenCL/cl.h CL/cl.h
 HINTS
 	ENV OPENCL_PATH
 	${CRR_OPENCL_INCLUDE_PATH}
+	${CMAKE_SOURCE_DIR}/../shared
 PATH_SUFFIXES
 	include
 )

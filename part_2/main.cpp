@@ -1,19 +1,4 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <cstring>
- 
-
-// Silence
-#define CL_TARGET_OPENCL_VERSION 120
-#define CL_USE_DEPRECATED_OPENCL_2_0_APIS
-#define CL_USE_DEPRECATED_OPENCL_1_2_APIS
-
-#ifdef __APPLE__
-#include <OpenCL/opencl.h>
-#else
-#include <CL/cl.h>
-#endif
-#include "clext.h"
+#include "basic_headers.h"
  
 #define MAX_SOURCE_SIZE (0x100000)
 
@@ -35,7 +20,7 @@ void printDeviceInfo(cl_device_id id){
 
 void printDevicesOnPlatform(cl_platform_id platform){
 
-    cl_uint num_devices, i;
+    cl_uint num_devices, i = -1;
     clGetDeviceIDs(platform, CL_DEVICE_TYPE_ALL, 0, NULL, &num_devices);
 	fprintf(stdout, "Found %d devices.\n", num_devices);
 
@@ -54,6 +39,7 @@ int main(void) {
     const int LIST_SIZE = 1024;
     int *A = (int*)malloc(sizeof(int)*LIST_SIZE);
     int *B = (int*)malloc(sizeof(int)*LIST_SIZE);
+
     for(i = 0; i < LIST_SIZE; i++) {
         A[i] = i;
         B[i] = LIST_SIZE - i;
