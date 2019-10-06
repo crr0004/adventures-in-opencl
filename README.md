@@ -20,6 +20,5 @@ files
 
 # Used libraries
 - Catch2 https://github.com/catchorg/Catch2
-- fmt https://github.com/fmtlib/fmt
 
 See LICENSE file for addition of respective licenses
