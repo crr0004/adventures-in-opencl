@@ -84,15 +84,36 @@ cl_uint createKernel(const char* fileName){
 }
 
 #define CATCH_CONFIG_MAIN
-#include "catch.hpp"
+#define CATCH_CONFIG_COLOUR_NONE
 
 #include <fstream>
+#include <string>
+#include "catch.hpp"
+
 
 TEST_CASE("File testing", "[test]"){
 
 	std::ifstream a = std::ifstream("kernel.cl", std::ios::in);
 
-	std::fprintf(stdout, "%c", (char)a.get());
+	// Jump to the end of the file so we can know how big it is
+	a.seekg(0, std::ios::end);
+
+	// See how many characters are in the file
+	std::streampos size = a.tellg();
+	// Create an empty string to read into
+	std::string programSource = std::string(size, '\0');
+
+	// Go back to the start of the file
+	a.seekg(0, std::ios::beg);
+	
+	// Read in the file
+	a.read(&programSource[0], size);
+	// Close of the file handle
+	a.close();
+
+	std::cout << "Program source" << std::endl <<
+		programSource
+	<< std::endl;
 
 }
 
