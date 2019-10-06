@@ -90,7 +90,7 @@ int main(void) {
 	char outBuf[256];
 	size_t outBufWritten = 0;
 	clGetPlatformInfo(platform_id[0], CL_PLATFORM_NAME, 256, outBuf, &outBufWritten);
-	fprintf(stdout, "Using %d Platform name %s.\n", i, outBuf);
+	fprintf(stdout, "Using %d Platform name %s.\n", 0, outBuf);
 	printDeviceInfo(device_id);
  
 	clCheckError(ret);
