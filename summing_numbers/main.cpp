@@ -79,10 +79,24 @@ cl_context setupContext() {
 }
 
 cl_uint createKernel(const char* fileName){
-	
+
 
 }
 
+#define CATCH_CONFIG_MAIN
+#include "catch.hpp"
+
+#include <fstream>
+
+TEST_CASE("File testing", "[test]"){
+
+	std::ifstream a = std::ifstream("kernel.cl", std::ios::in);
+
+	std::fprintf(stdout, "%c", (char)a.get());
+
+}
+
+/*
 int main(int argv, const char **argc) {
 	cl_context context = setupContext();
 
@@ -93,3 +107,4 @@ int main(int argv, const char **argc) {
 
 	return 0;
 }
+*/
