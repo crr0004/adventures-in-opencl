@@ -2,7 +2,7 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "Build part 2",
+            "label": "Build",
             "group": "build",
             "type": "shell",
             "windows": {
@@ -14,7 +14,7 @@
                     },
                     "cwd": "${workspaceFolder}/${input:projectFolder}/build"
                 },
-                "command": "ninja"
+                "command": "ninja -v"
             },
             "problemMatcher": [
                 "$gcc"
@@ -31,7 +31,7 @@
                         "CC": "clang",
                         "CXX": "clang++"
                     },
-                    "cwd": "${workspaceFolder}/${input:projectFolder}/build"
+                    "cwd": "${workspaceFolder}/${input:projectFolder}/build",
                 },
                 "command": "cmake -G Ninja ..",
             }
