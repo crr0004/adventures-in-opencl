@@ -17,3 +17,9 @@ vendor implementation is broken it can crash your driver.
 # Running
 Run each sample from the source directory as it needs to pick up the kernel
 files
+
+# Used libraries
+- Catch2 https://github.com/catchorg/Catch2
+- fmt https://github.com/fmtlib/fmt
+
+See LICENSE file for addition of respective licenses
