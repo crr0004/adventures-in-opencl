@@ -16,6 +16,16 @@
                 },
                 "command": "ninja -v"
             },
+            "linux": {
+                "options": {
+                    "env": {
+                        "CC": "clang",
+                        "CXX": "clang++"
+                    },
+                    "cwd": "${workspaceFolder}/${input:projectFolder}/build"
+                },
+                "command": "ninja -v"
+            },
             "problemMatcher": [
                 "$gcc"
             ]
@@ -34,7 +44,13 @@
                     "cwd": "${workspaceFolder}/${input:projectFolder}/build",
                 },
                 "command": "cmake -G Ninja ..",
-            }
+            },
+            "linux": {
+                "options": {
+                    "cwd": "${workspaceFolder}/${input:projectFolder}/build"
+                }
+            },
+            "command": "cmake -G Ninja .."
         }
     ],
     "inputs": [

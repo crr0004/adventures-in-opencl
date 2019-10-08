@@ -27,7 +27,7 @@ PATH_SUFFIXES
 mark_as_advanced(OPENCL_INCLUDE_DIRS)
 
 find_library(OPENCL_LIBRARIES
-	NAMES OpenCL libOpenCL.so
+	NAMES OpenCL libOpenCL.so libOpenCL.so.1
 	PATH_SUFFIXES
 	lib/x86_64/
 	/opt/amdgpu-pro/lib64/

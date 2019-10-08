@@ -35,6 +35,23 @@
             ]
         },
         {
+            "name": "(gbd) Launch Linux",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/${input:projectFolder}/build/bin/main",
+            "args": [
+            ],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/${input:projectFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "miDebuggerPath": "gdb",
+            "setupCommands": [
+                 
+            ]
+        },
+        {
             "name": "Python: Current File",
             "type": "python",
             "request": "launch",
