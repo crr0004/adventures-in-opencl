@@ -1,4 +1,10 @@
 #include "basic_headers.h"
+#define CATCH_CONFIG_MAIN
+#define CATCH_CONFIG_COLOUR_NONE
+
+#include <fstream>
+#include <string>
+#include "catch.hpp"
 
 void printPlatformName(cl_platform_id id) {
 	char outBuf[256];
@@ -78,22 +84,9 @@ cl_context setupContext() {
 	return context;
 }
 
-cl_uint createKernel(const char* fileName){
 
-
-}
-
-#define CATCH_CONFIG_MAIN
-#define CATCH_CONFIG_COLOUR_NONE
-
-#include <fstream>
-#include <string>
-#include "catch.hpp"
-
-
-TEST_CASE("File testing", "[test]"){
-
-	std::ifstream a = std::ifstream("kernel.cl", std::ios::in);
+std::string readFile(const char* fileName, size_t *fileSize){
+	std::ifstream a = std::ifstream(fileName, std::ios::in);
 
 	// Jump to the end of the file so we can know how big it is
 	a.seekg(0, std::ios::end);
@@ -111,11 +104,30 @@ TEST_CASE("File testing", "[test]"){
 	// Close of the file handle
 	a.close();
 
+	*fileSize = size;
+	return programSource;
+}
+
+cl_uint createKernel(const char* fileName){
+
+
+}
+
+TEST_CASE("File testing", "[test]"){
+
+	std::ifstream a = std::ifstream("kernel.cl", std::ios::in);
+
+	size_t size;
+	std::string programSource = readFile("kernel.cl", &size);
 	std::cout << "Program source" << std::endl <<
 		programSource
 	<< std::endl;
 
+	REQUIRE(size > 0);
+
 }
+
+
 
 /*
 int main(int argv, const char **argc) {
