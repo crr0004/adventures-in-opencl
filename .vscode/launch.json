@@ -32,7 +32,8 @@
             "miDebuggerPath": "F:/dev/msys64/mingw64/bin/gdb.exe",
             "setupCommands": [
                  
-            ]
+            ],
+            "preLaunchTask": "Build"
         },
         {
             "name": "(gbd) Launch Linux",

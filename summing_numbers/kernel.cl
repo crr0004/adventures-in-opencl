@@ -1,10 +1,8 @@
-__kernel void vector_add(__global const int *A, __global const int *B, __global int *C) {
+__kernel void add(__global const int *numbers) {
  
     // Get the index of the current element to be processed
     int i = get_global_id(0);
- 
-    // Do the operation
-    C[i] = A[i] + B[i];
-//	C[i] = C[i] - 1;
-//	C[i] = 10;
+    if(i > 0){
+        numbers[i] = numbers[i] + numbers[i-1]
+    }
 }
