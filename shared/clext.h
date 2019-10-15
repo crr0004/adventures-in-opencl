@@ -25,6 +25,7 @@ const char* clGetErrorString(int errorCode) {
 		case -8: return "CL_MEM_COPY_OVERLAP";
 		case -9: return "CL_IMAGE_FORMAT_MISMATCH";
 		case -10: return "CL_IMAGE_FORMAT_NOT_SUPPORTED";
+		case -11: return "CL_BUILD_PROGRAM_FAILURE";
 		case -12: return "CL_MAP_FAILURE";
 		case -13: return "CL_MISALIGNED_SUB_BUFFER_OFFSET";
 		case -14: return "CL_EXEC_STATUS_ERROR_FOR_EVENTS_IN_WAIT_LIST";
@@ -98,8 +99,8 @@ const char* clGetErrorString(int errorCode) {
  */
 int clCheckError(int errorCode) {
 	if (errorCode != 0) {
-		fprintf(stderr, "%s\n", clGetErrorString(errorCode));
-		std::exit(1);
+		fprintf(stderr, "Error in openCL call %s\n", clGetErrorString(errorCode));
+		std::exit(errorCode);
 	}
 	return errorCode;
 }
