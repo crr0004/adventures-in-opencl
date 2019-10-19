@@ -4,6 +4,7 @@
 
 #include <fstream>
 #include <string>
+#include <benchmark/benchmark.h>
 #include "catch.hpp"
 
 void printPlatformName(cl_platform_id id) {

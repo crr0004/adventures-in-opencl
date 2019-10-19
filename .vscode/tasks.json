@@ -12,7 +12,7 @@
                         "CC": "clang",
                         "CXX": "clang++"
                     },
-                    "cwd": "${workspaceFolder}/${input:projectFolder}/build"
+                    "cwd": "${workspaceFolder}//build"
                 },
                 "command": "ninja -v"
             },
@@ -22,7 +22,7 @@
                         "CC": "clang",
                         "CXX": "clang++"
                     },
-                    "cwd": "${workspaceFolder}/${input:projectFolder}/build"
+                    "cwd": "${workspaceFolder}//build"
                 },
                 "command": "ninja -v"
             },
@@ -41,29 +41,19 @@
                         "CC": "clang",
                         "CXX": "clang++"
                     },
-                    "cwd": "${workspaceFolder}/${input:projectFolder}/build",
+                    "cwd": "${workspaceFolder}//build",
                 },
                 "command": "cmake -G Ninja ..",
             },
             "linux": {
                 "options": {
-                    "cwd": "${workspaceFolder}/${input:projectFolder}/build"
+                    "cwd": "${workspaceFolder}/build"
                 }
             },
             "command": "cmake -G Ninja .."
         }
     ],
     "inputs": [
-        {
-            "id": "projectFolder",
-            "type": "pickString",
-            "default": "part_2",
-            "description": "Folder that you want to build.",
-            "options": [
-                "part_2",
-                "naive_approach",
-                "summing_numbers"
-            ]
-        }
+        
     ]
 }

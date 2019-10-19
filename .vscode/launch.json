@@ -7,7 +7,7 @@
         {
             "id": "projectFolder",
             "type": "pickString",
-            "default": "part_2",
+            "default": "summing_numbers",
             "description": "Folder that you want to build.",
             "options": [
                 "part_2",
@@ -21,7 +21,7 @@
             "name": "(gbd) Launch",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/${input:projectFolder}/build/bin/main.exe",
+            "program": "${workspaceFolder}/build/${input:projectFolder}/bin/${input:projectFolder}.exe",
             "args": [
             ],
             "stopAtEntry": false,
@@ -39,7 +39,7 @@
             "name": "(gbd) Launch Linux",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/${input:projectFolder}/build/bin/main",
+            "program": "${workspaceFolder}/build/${input:projectFolder}/bin/${input:projectFolder}",
             "args": [
             ],
             "stopAtEntry": false,

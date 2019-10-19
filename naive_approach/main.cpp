@@ -115,6 +115,7 @@ int main(void) {
 	}
 	
 	// clear out the buffer for printing
+    char buf[256];
 	std::memset(buf, 0, sizeof buf);
 	clGetDeviceInfo(device_id, CL_DEVICE_NAME, 128, buf, NULL);
 	fprintf(stdout, "Using %s for context device.\n", buf);
