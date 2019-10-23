@@ -1,9 +1,8 @@
-__kernel void add(__global int *numbers) {
+__kernel void add(__global float *numbers, __global float *numOut) {
  
     // Get the index of the current element to be processed
     int i = get_global_id(0);
-    if(i > 0){
-        numbers[i] = numbers[i] + numbers[i-1];
-        printf("%d: %d", i, numbers[i]);
-    }
+    float4 va = vload4(i, numbers);
+
+	numOut[i] = result;
 }

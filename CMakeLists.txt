@@ -2,7 +2,6 @@ cmake_minimum_required( VERSION 2.6.0 )
 project(adventures_in_opencl)
 
 # Disable testing in the benchmarking library
-set(CMAKE_BUILD_TYPE Release)
 set(BENCHMARK_ENABLE_TESTING OFF CACHE BOOL "")
 add_subdirectory(benchmark)
 

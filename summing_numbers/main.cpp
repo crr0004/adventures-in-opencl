@@ -1,11 +1,13 @@
 #include "basic_headers.h"
-#define CATCH_CONFIG_MAIN
-#define CATCH_CONFIG_COLOUR_NONE
+// #define CATCH_CONFIG_MAIN
+// #define CATCH_CONFIG_COLOUR_NONE
 
 #include <fstream>
 #include <string>
+#include <iostream>
+#include <cmath>
 #include <benchmark/benchmark.h>
-#include "catch.hpp"
+// #include "catch.hpp"
 
 void printPlatformName(cl_platform_id id) {
 	char outBuf[256];
@@ -132,6 +134,24 @@ cl_kernel createKernel(const char* fileName, const char* entryPoint, cl_context 
 
 	// Build the program
     ret = clBuildProgram(program, 1, &deviceId, NULL, NULL, NULL);
+	if(ret != CL_SUCCESS){
+		size_t bufSize = 1024;
+		char buf[bufSize];
+		size_t returnedBuf = 0;
+
+		clGetProgramBuildInfo(
+			program,
+			deviceId,
+			CL_PROGRAM_BUILD_LOG,
+			bufSize,
+			&buf,
+			&returnedBuf
+		);
+		if(returnedBuf == bufSize){
+			std::cout << "More log entry is probably available for the program build" << std::endl;
+		}
+		std::cout << "Log entry for last program build: " << std::endl << buf << std::endl;
+	}
 	clCheckError(ret);
  
     // Create the OpenCL kernel
@@ -141,9 +161,9 @@ cl_kernel createKernel(const char* fileName, const char* entryPoint, cl_context 
 	return kernel;
 }
 
-cl_mem setBufferIntoKernel(
+template<typename T> cl_mem setBufferIntoKernel(
 	cl_context context, 
-	int *numbers, 
+	T *numbers, 
 	size_t size,
 	cl_kernel kernel, 
 	cl_command_queue commandQueue,
@@ -151,10 +171,28 @@ cl_mem setBufferIntoKernel(
 	){
 
     cl_int ret;
-	cl_mem memObject = clCreateBuffer(context, CL_MEM_READ_ONLY, size * sizeof(int), NULL, &ret);
+	cl_mem memObject = clCreateBuffer(context, CL_MEM_READ_ONLY, size * sizeof(T), NULL, &ret);
 	clCheckError(ret);
 
-	ret = clEnqueueWriteBuffer(commandQueue, memObject, CL_TRUE, 0, size * sizeof(int), numbers, 0, NULL, NULL);
+	ret = clEnqueueWriteBuffer(commandQueue, memObject, CL_TRUE, 0, size * sizeof(T), numbers, 0, NULL, NULL);
+	clCheckError(ret);
+
+	ret = clSetKernelArg(kernel, index, sizeof(cl_mem), (void *)&memObject);
+	clCheckError(ret);
+
+	return memObject;
+}
+
+template<typename T> cl_mem createBuffer(
+	cl_context context, 
+	size_t size,
+	cl_kernel kernel, 
+	cl_command_queue commandQueue,
+	cl_uint index
+){
+	cl_int ret;
+	cl_mem memObject =
+	clCreateBuffer(context, CL_MEM_READ_WRITE, size * sizeof(T), NULL, &ret);
 	clCheckError(ret);
 
 	ret = clSetKernelArg(kernel, index, sizeof(cl_mem), (void *)&memObject);
@@ -167,6 +205,7 @@ void cleanContext(cl_context context){
 
 }
 
+/*
 TEST_CASE("File testing", "[test]"){
 
 	SECTION(""){
@@ -174,7 +213,7 @@ TEST_CASE("File testing", "[test]"){
 
 		size_t size;
 		std::string programSource = readFile("kernel.cl", &size);
-		std::cout << "Program source" << std::endl << programSource << std::endl;
+		// std::cout << "Program source" << std::endl << programSource << std::endl;
 
 		REQUIRE(size > 0);
 	}
@@ -200,59 +239,8 @@ TEST_CASE("File testing", "[test]"){
 
 	SECTION(""){
 
-		const size_t numberRange = 100;
-		int *numbers = new int[numberRange];
-		int *numbersCopy = new int[numberRange];
-		for(int i = 0; i < numberRange; i++){
-			numbers[i] = i;
-		}
-
-		cl_mem numbersMemObj;
-		cl_kernel kernel;
-		cl_device_id deviceId;
-		cl_int ret;
-
-
-		cl_context context = setupContext(&deviceId);
-		cl_command_queue commandQueue = clCreateCommandQueue(context, deviceId, 0, &ret);
-		clCheckError(ret);
-
-		kernel = createKernel("kernel.cl", "add", context, deviceId);
-
-		numbersMemObj = setBufferIntoKernel(
-			context, // context
-			numbers, // buffer
-			numberRange,
-			kernel, // kernel to set into
-			commandQueue,
-			0 // argument index
-			);
-
-		/*
-		createWriteBufferOutOfKernel(
-			context,
-			kernel,
-			numbersSize,
-			1,
-			&numbersWriteMemObj
-		)
-		*/
-
-		cl_event kernelEnqueueToWaitFor;	
-		const size_t localWorkgroupSize = 32;
-		ret = clEnqueueNDRangeKernel(commandQueue, kernel, 1, NULL, &numberRange, (const size_t *)&localWorkgroupSize,
-									0, NULL, &kernelEnqueueToWaitFor);
-		clCheckError(ret);
-
-		ret = clEnqueueReadBuffer(commandQueue, numbersMemObj, CL_TRUE, 0, numberRange * sizeof(int), numbersCopy, 1, &kernelEnqueueToWaitFor, NULL);
-		clCheckError(ret);
-		for(int i = 1; i < numberRange; i++){
-			numbers[i] = numbers[i] + numbers[i-1];
-			REQUIRE(numbersCopy[i] == numbers[i]);
-		}
-
-		cleanContext(context);
-		}
+	}
+		
 
 }
 
@@ -263,16 +251,63 @@ TEST_CASE("Naive Number Sum", "[test]"){
 
 
 }
-
-/*
+*/
 int main(int argv, const char **argc) {
-	cl_context context = setupContext();
+	const size_t numberRange = 4*std::exp2(25);
+	float *numbers = new float[numberRange];
+	float *numbersCopy = new float[numberRange];
+	for(int i = 0; i < numberRange; i++) {
+		numbers[i] = i;
+	}
+
+	cl_mem numbersMemObj;
+	cl_kernel kernel;
+	cl_device_id deviceId;
+	cl_int ret;
 
 
-
-    cl_int ret = clReleaseContext(context);
+	cl_context context = setupContext(&deviceId);
+	cl_command_queue commandQueue = clCreateCommandQueue(context, deviceId, 0, &ret);
 	clCheckError(ret);
+
+	kernel = createKernel("kernel.cl", "add", context, deviceId);
+
+	numbersMemObj = setBufferIntoKernel<float>(context, // context
+	                                    numbers, // buffer
+	                                    numberRange,
+	                                    kernel, // kernel to set into
+	                                    commandQueue,
+	                                    0 // argument index
+	);
+	size_t bufSize = numberRange/4;
+	cl_mem numberoutMemObj = createBuffer<float>(context, bufSize, kernel, commandQueue, 1);
+
+	/*
+	createWriteBufferOutOfKernel(
+	    context,
+	    kernel,
+	    numbersSize,
+	    1,
+	    &numbersWriteMemObj
+	)
+	*/
+
+	cl_event kernelEnqueueToWaitFor;
+	const size_t localWorkgroupSize = NULL;
+	const size_t globalWorkSize = numberRange/4;
+	ret = clEnqueueNDRangeKernel(commandQueue, kernel, 1, NULL, &globalWorkSize,
+	                             NULL, 0, NULL, &kernelEnqueueToWaitFor);
+	clCheckError(ret);
+
+	ret = clEnqueueReadBuffer(commandQueue, numberoutMemObj, CL_TRUE, 0, (numberRange/4) * sizeof(float),
+	                          numbersCopy, 1, &kernelEnqueueToWaitFor, NULL);
+
+	clCheckError(ret);
+	for(int i = 0; i < numberRange; i++) {
+		//std::cout << numbersCopy[i]	<< std::endl;
+	}
+
+	cleanContext(context);
 
 	return 0;
 }
-*/

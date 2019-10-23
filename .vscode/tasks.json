@@ -12,7 +12,7 @@
                         "CC": "clang",
                         "CXX": "clang++"
                     },
-                    "cwd": "${workspaceFolder}//build"
+                    "cwd": "${workspaceFolder}/build"
                 },
                 "command": "ninja -v"
             },
@@ -22,7 +22,7 @@
                         "CC": "clang",
                         "CXX": "clang++"
                     },
-                    "cwd": "${workspaceFolder}//build"
+                    "cwd": "${workspaceFolder}/build"
                 },
                 "command": "ninja -v"
             },
@@ -41,7 +41,7 @@
                         "CC": "clang",
                         "CXX": "clang++"
                     },
-                    "cwd": "${workspaceFolder}//build",
+                    "cwd": "${workspaceFolder}/build",
                 },
                 "command": "cmake -G Ninja ..",
             },

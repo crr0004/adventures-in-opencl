@@ -26,7 +26,12 @@
             ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/${input:projectFolder}",
-            "environment": [],
+            "environment": [
+                {
+                    "name": "PATH",
+                    "value": "${config:user.mingw-w64-path}\\bin;${config:user.mingw-w64-path}\\x86_64-w64-mingw32\\bin;C:\\Windows\\System32",
+                }
+            ],
             "externalConsole": false,
             "MIMode": "gdb",
             "miDebuggerPath": "F:/dev/msys64/mingw64/bin/gdb.exe",
