@@ -253,61 +253,70 @@ TEST_CASE("Naive Number Sum", "[test]"){
 }
 */
 int main(int argv, const char **argc) {
+	// Create the buffer we are going to operate on
 	const size_t numberRange = 4*std::exp2(25);
 	float *numbers = new float[numberRange];
-	float *numbersCopy = new float[numberRange];
+
+	// create the buffer we are going to write the results into
+	size_t bufSize = numberRange/4; // how many results we want
+	float *numbersCopy = new float[bufSize];
+
+	// fill in the numbers
 	for(int i = 0; i < numberRange; i++) {
 		numbers[i] = i;
 	}
 
-	cl_mem numbersMemObj;
-	cl_kernel kernel;
-	cl_device_id deviceId;
-	cl_int ret;
+	// some openCL API objects
+	cl_mem numbersMemObj; // buffer memory pointer
+	cl_kernel kernel; // kernel pointer
+	cl_device_id deviceId; // device we are going to use
+	cl_int ret; // error number holder
 
 
+	// Create and setup the context to and assign the deviceId we will be using
 	cl_context context = setupContext(&deviceId);
+
+	// Create a command queue to push commands into
 	cl_command_queue commandQueue = clCreateCommandQueue(context, deviceId, 0, &ret);
 	clCheckError(ret);
 
-	kernel = createKernel("kernel.cl", "add", context, deviceId);
+	// Create our compute kernel for the device, context and the entry point
+	kernel = createKernel(
+		"kernel.cl", // filepath to kernel source
+		"add", // entry point name
+		context, // opencl context
+		deviceId // device to build against
+		);
 
+	// Write the buffer of numbers into the memory space the kernel will access
 	numbersMemObj = setBufferIntoKernel<float>(context, // context
 	                                    numbers, // buffer
 	                                    numberRange,
 	                                    kernel, // kernel to set into
 	                                    commandQueue,
-	                                    0 // argument index
+	                                    0 // argument index in the kernel (left to right, zero indexed)
 	);
-	size_t bufSize = numberRange/4;
+	//Create a buffer that we read the results put into the second argument of the kernel into
 	cl_mem numberoutMemObj = createBuffer<float>(context, bufSize, kernel, commandQueue, 1);
 
-	/*
-	createWriteBufferOutOfKernel(
-	    context,
-	    kernel,
-	    numbersSize,
-	    1,
-	    &numbersWriteMemObj
-	)
-	*/
-
-	cl_event kernelEnqueueToWaitFor;
-	const size_t localWorkgroupSize = NULL;
-	const size_t globalWorkSize = numberRange/4;
+	// Tell the device that we want to run the kernel, and how it's compute space should be divided up
+	cl_event kernelEnqueueToWaitFor; // a sync event to wait for
+	const size_t localWorkgroupSize = 64; // how big each workgroup should be
+	const size_t globalWorkSize = numberRange/4; // total index space for the kernel
 	ret = clEnqueueNDRangeKernel(commandQueue, kernel, 1, NULL, &globalWorkSize,
-	                             NULL, 0, NULL, &kernelEnqueueToWaitFor);
+	                             &localWorkgroupSize/*NULL*/, 0, NULL, &kernelEnqueueToWaitFor);
 	clCheckError(ret);
 
-	ret = clEnqueueReadBuffer(commandQueue, numberoutMemObj, CL_TRUE, 0, (numberRange/4) * sizeof(float),
+	ret = clEnqueueReadBuffer(commandQueue, numberoutMemObj, CL_TRUE, 0, bufSize * sizeof(float),
 	                          numbersCopy, 1, &kernelEnqueueToWaitFor, NULL);
-
 	clCheckError(ret);
+
 	for(int i = 0; i < numberRange; i++) {
+		// Do whatever with the results
 		//std::cout << numbersCopy[i]	<< std::endl;
 	}
 
-	cleanContext(context);
-
+    // normally you clean everything up here but I haven't implented that
+	// cleanContext(context);
 	return 0;
 }
