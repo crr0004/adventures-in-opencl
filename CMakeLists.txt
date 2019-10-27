@@ -3,12 +3,12 @@ project(adventures_in_opencl)
 
 # Disable testing in the benchmarking library
 set(BENCHMARK_ENABLE_TESTING OFF CACHE BOOL "")
+set(CMAKE_BUILD_TYPE Release CACHE BOOL "" FORCE)
 add_subdirectory(benchmark)
 
 # Set CMAKE_BUILD_TYPE (default = Release)
-if("${CMAKE_BUILD_TYPE}" STREQUAL "")
-set(CMAKE_BUILD_TYPE RelWithDebInfo CACHE BOOL "" FORCE)
-endif()
+# if("${CMAKE_BUILD_TYPE}" STREQUAL "")
+# endif()
 
 
 ############################################################################

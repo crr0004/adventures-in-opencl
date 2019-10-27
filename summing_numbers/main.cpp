@@ -27,7 +27,7 @@ void printDeviceInfo(cl_device_id id) {
 void printDevicesOnPlatform(cl_platform_id platform) {
 	cl_uint num_devices, i = -1;
 	clGetDeviceIDs(platform, CL_DEVICE_TYPE_ALL, 0, NULL, &num_devices);
-	fprintf(stdout, "Found %d devices.\n", num_devices);
+	// fprintf(stdout, "Found %d devices.\n", num_devices);
 
 	cl_device_id devices[num_devices];
 	clGetDeviceIDs(platform, CL_DEVICE_TYPE_ALL, num_devices, devices, NULL);
@@ -47,7 +47,7 @@ cl_context setupContext(cl_device_id *usedDeviceId) {
 
 	// Grab the platforms
 	cl_int ret = clGetPlatformIDs(platformsToGet, platform_id, &ret_num_platforms);
-	fprintf(stdout, "%d number of platforms\n", ret_num_platforms);
+	// fprintf(stdout, "%d number of platforms\n", ret_num_platforms);
 
 	// Grab the second device
 	ret = clGetDeviceIDs(platform_id[0], CL_DEVICE_TYPE_DEFAULT, 1, &device_id, &ret_num_devices);
@@ -59,10 +59,10 @@ cl_context setupContext(cl_device_id *usedDeviceId) {
 	// Dump query information from device
 	char buf[128];
 	clGetDeviceInfo(device_id, CL_DEVICE_NAME, 128, buf, NULL);
-	fprintf(stdout, "Device %s supports.\n", buf);
+	// fprintf(stdout, "Device %s supports.\n", buf);
 
 	for(int i = 0; i < ret_num_platforms; i++){
-		printPlatformName(platform_id[i]);
+		// printPlatformName(platform_id[i]);
 	}
 
 	if(ret != CL_SUCCESS) {
@@ -86,7 +86,7 @@ cl_context setupContext(cl_device_id *usedDeviceId) {
 	}
 	std::memset(buf, 0, sizeof buf);
 	clGetDeviceInfo(device_id, CL_DEVICE_NAME, 128, buf, NULL);
-	fprintf(stdout, "Using %s for context device.\n", buf);
+	// fprintf(stdout, "Using %s for context device.\n", buf);
 
 	if(usedDeviceId != nullptr){
 		*usedDeviceId = used_device_id;
@@ -201,83 +201,55 @@ template<typename T> cl_mem createBuffer(
 	return memObject;
 }
 
-void cleanContext(cl_context context){
 
+// some openCL API objects
+cl_context context;
+cl_mem numbersMemObj; // buffer memory pointer
+cl_kernel kernel; // kernel pointer
+cl_device_id deviceId; // device we are going to use
+cl_command_queue commandQueue;
+cl_mem numberoutMemObj;
+cl_int ret; // error number holder
+cl_event kernelEnqueueToWaitFor; // a sync event to wait for
+int *numbers;
+int *numbersCopy;
+
+void cleanContext(cl_context context){// Just grab the kernel program so we can release it
+	cl_program program;
+	clGetKernelInfo(kernel, CL_KERNEL_PROGRAM, sizeof(cl_program), &program, NULL);
+
+	clFlush(commandQueue);
+	clFinish(commandQueue);
+	clReleaseEvent(kernelEnqueueToWaitFor);
+	clReleaseProgram(program);
+	clReleaseKernel(kernel);
+	clReleaseMemObject(numberoutMemObj);
+	clReleaseMemObject(numbersMemObj);
+	clReleaseCommandQueue(commandQueue);
+	clReleaseDevice(deviceId);
+	clReleaseContext(context);
 }
 
-/*
-TEST_CASE("File testing", "[test]"){
+int setup(const size_t numberRange){
 
-	SECTION(""){
-		std::ifstream a = std::ifstream("kernel.cl", std::ios::in);
-
-		size_t size;
-		std::string programSource = readFile("kernel.cl", &size);
-		// std::cout << "Program source" << std::endl << programSource << std::endl;
-
-		REQUIRE(size > 0);
-	}
-
-	SECTION(""){
-
-		cl_device_id deviceId = nullptr;
-		cl_context context = setupContext(&deviceId);
-
-		REQUIRE(deviceId != nullptr);
-
-		cl_uint computeUnits = 0;
-		size_t returnedSize = 0;
-		cl_int ret = clGetDeviceInfo(deviceId, CL_DEVICE_MAX_CLOCK_FREQUENCY, sizeof(cl_uint),
-		                             &computeUnits, &returnedSize);
-		clCheckError(ret);
-
-		REQUIRE(returnedSize > 0);
-		REQUIRE(computeUnits > 0);
-
-		std::cout << "Compute units " << computeUnits << std::endl;
-	}
-
-	SECTION(""){
-
-	}
-		
-
-}
-
-TEST_CASE("Device compute units", "[test]"){
-}
-
-TEST_CASE("Naive Number Sum", "[test]"){
-
-
-}
-*/
-int main(int argv, const char **argc) {
 	// Create the buffer we are going to operate on
-	const size_t numberRange = 4*std::exp2(25);
-	float *numbers = new float[numberRange];
+//	const size_t numberRange = 4*std::exp2(25);
+	numbers = new int[numberRange];
 
 	// create the buffer we are going to write the results into
 	size_t bufSize = numberRange/4; // how many results we want
-	float *numbersCopy = new float[bufSize];
+	numbersCopy = new int[bufSize];
 
 	// fill in the numbers
 	for(int i = 0; i < numberRange; i++) {
 		numbers[i] = i;
 	}
 
-	// some openCL API objects
-	cl_mem numbersMemObj; // buffer memory pointer
-	cl_kernel kernel; // kernel pointer
-	cl_device_id deviceId; // device we are going to use
-	cl_int ret; // error number holder
-
-
 	// Create and setup the context to and assign the deviceId we will be using
-	cl_context context = setupContext(&deviceId);
+	context = setupContext(&deviceId);
 
 	// Create a command queue to push commands into
-	cl_command_queue commandQueue = clCreateCommandQueue(context, deviceId, 0, &ret);
+	commandQueue = clCreateCommandQueue(context, deviceId, 0, &ret);
 	clCheckError(ret);
 
 	// Create our compute kernel for the device, context and the entry point
@@ -289,34 +261,83 @@ int main(int argv, const char **argc) {
 		);
 
 	// Write the buffer of numbers into the memory space the kernel will access
-	numbersMemObj = setBufferIntoKernel<float>(context, // context
+	return 0;
+}
+int runAdd(const size_t bufSize, size_t division) {
+	// Tell the device that we want to run the kernel, and how it's compute space should be divided up
+	const size_t localWorkgroupSize = 32; // how big each workgroup should be
+	const size_t globalWorkSize = bufSize/division; // total index space for the kernel
+
+	numbersMemObj = setBufferIntoKernel<int>(context, // context
 	                                    numbers, // buffer
-	                                    numberRange,
+	                                    bufSize,
 	                                    kernel, // kernel to set into
 	                                    commandQueue,
 	                                    0 // argument index in the kernel (left to right, zero indexed)
 	);
 	//Create a buffer that we read the results put into the second argument of the kernel into
-	cl_mem numberoutMemObj = createBuffer<float>(context, bufSize, kernel, commandQueue, 1);
+	numberoutMemObj = createBuffer<int>(context, bufSize/division, kernel, commandQueue, 1);
 
-	// Tell the device that we want to run the kernel, and how it's compute space should be divided up
-	cl_event kernelEnqueueToWaitFor; // a sync event to wait for
-	const size_t localWorkgroupSize = 64; // how big each workgroup should be
-	const size_t globalWorkSize = numberRange/4; // total index space for the kernel
+	// This is for a local buffer for the workgroups, we only need to set the size, not the contents
+	clSetKernelArg(kernel, 2, localWorkgroupSize * sizeof(int), NULL);
+
+
+	// std::cout << "Enqueuing kernel with " << globalWorkSize 
+	// << " global index into local group size " << localWorkgroupSize << std::endl;
 	ret = clEnqueueNDRangeKernel(commandQueue, kernel, 1, NULL, &globalWorkSize,
-	                             &localWorkgroupSize/*NULL*/, 0, NULL, &kernelEnqueueToWaitFor);
+	                             &localWorkgroupSize, 0, NULL, &kernelEnqueueToWaitFor);
 	clCheckError(ret);
 
-	ret = clEnqueueReadBuffer(commandQueue, numberoutMemObj, CL_TRUE, 0, bufSize * sizeof(float),
+	ret = clEnqueueReadBuffer(commandQueue, numberoutMemObj, CL_TRUE, 0, (bufSize/division) * sizeof(float),
 	                          numbersCopy, 1, &kernelEnqueueToWaitFor, NULL);
 	clCheckError(ret);
-
-	for(int i = 0; i < numberRange; i++) {
-		// Do whatever with the results
-		//std::cout << numbersCopy[i]	<< std::endl;
-	}
+	
 
     // normally you clean everything up here but I haven't implented that
-	// cleanContext(context);
+	
+
 	return 0;
 }
+
+static void BM_OpenCL_Add(benchmark::State& state){
+	setup(
+		std::exp2(state.range(0))
+		);
+
+	for(auto _ : state){
+		runAdd(std::exp2(state.range(0)), 4);
+	}
+
+
+	cleanContext(context);
+	free(numbers);
+	free(numbersCopy);
+
+}
+
+BENCHMARK(BM_OpenCL_Add)
+	->Iterations(1000)
+	->Unit(benchmark::kMillisecond)
+	->DenseRange(5, 20, 1)
+	// ->Arg(std::exp2(10))
+	// ->Arg(std::exp2(11))
+	// ->Arg(std::exp2(12))
+	// ->Arg(std::exp2(13))
+	// ->Arg(std::exp2(14))
+	// ->Arg(std::exp2(16))
+	// ->Arg(std::exp2(17))
+	// ->Arg(std::exp2(18))
+	// ->Arg(std::exp2(19))
+	// ->Arg(std::exp2(20))
+	;
+
+int main(){
+	setup(std::exp2(7));
+	runAdd(std::exp2(7), 4);
+	cleanContext(context);
+	free(numbers);
+	free(numbersCopy);
+
+	return 0;
+}
+//BENCHMARK_MAIN();
