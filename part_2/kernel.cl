@@ -1,10 +1,10 @@
-__kernel void vector_add(__global const int *A, __global const int *B, __global int *C) {
+__kernel void add(__global int *numbers, __global int *numOut) {
  
-    // Get the index of the current element to be processed
-    int i = get_global_id(0);
- 
-    // Do the operation
-    C[i] = A[i] + B[i];
-//	C[i] = C[i] - 1;
-//	C[i] = 10;
+	// Get the index of the current element to be processed
+	int i = get_global_id(0)*2;
+	int locali = get_local_id(0);
+	//printf("%d\t%d\t%d\n", get_global_id(0), get_group_id(0), get_local_id(0));
+
+	
+	//vstore4(va + vb, i, numOut);
 }

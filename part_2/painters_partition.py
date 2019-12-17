@@ -6,6 +6,7 @@ def parition(n, k):
 
     a = []
     for i in range(len(n)):
+        print(n[i+1:])
         b =  [parition(n[:i+1], k-1), sum(n[i+1:] )]
         a.append( max(
           b 
@@ -13,6 +14,6 @@ def parition(n, k):
     return min(a)
 
 if __name__ == "__main__":
-    input = range(10*100*100)#[1,2,3,4,5,6,7,8,9]
-    partitions = 2
+    input = [1,2,3,4,5,6,7,8,9]
+    partitions = 3
     print(parition(input, partitions))

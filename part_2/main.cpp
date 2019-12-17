@@ -1,218 +1,146 @@
 #include "basic_headers.h"
- 
-#define MAX_SOURCE_SIZE (0x100000)
+#include "cl_utilities.h"
+// #define CATCH_CONFIG_MAIN
+// #define CATCH_CONFIG_COLOUR_NONE
 
-void printPlatformName(cl_platform_id id){
-	char outBuf[256];
-	size_t outBufWritten = 0;
-	clGetPlatformInfo(id, CL_PLATFORM_NAME, 256, outBuf, &outBufWritten);
-	fprintf(stdout, "Platform name %s.\n", outBuf);
+#include <fstream>
+#include <string>
+#include <iostream>
+#include <cmath>
+#include <benchmark/benchmark.h>
+// #include "catch.hpp"
+
+
+// some openCL API objects
+cl_context context;
+cl_mem numbersMemObj; // buffer memory pointer
+cl_kernel kernel; // kernel pointer
+cl_device_id deviceId; // device we are going to use
+cl_command_queue commandQueue;
+cl_mem numberoutMemObj;
+cl_int ret; // error number holder
+cl_event kernelEnqueueToWaitFor; // a sync event to wait for
+int *numbers;
+int *numbersCopy;
+
+void cleanContext(cl_context context){// Just grab the kernel program so we can release it
+	cl_program program;
+	clGetKernelInfo(kernel, CL_KERNEL_PROGRAM, sizeof(cl_program), &program, NULL);
+
+	clFlush(commandQueue);
+	clFinish(commandQueue);
+	clReleaseEvent(kernelEnqueueToWaitFor);
+	clReleaseProgram(program);
+	clReleaseKernel(kernel);
+	clReleaseMemObject(numberoutMemObj);
+	clReleaseMemObject(numbersMemObj);
+	clReleaseCommandQueue(commandQueue);
+	clReleaseDevice(deviceId);
+	clReleaseContext(context);
 }
-void printDeviceInfo(cl_device_id id){
-    char buf[128];
-        clGetDeviceInfo(id, CL_DEVICE_NAME, 128, buf, NULL);
-        fprintf(stdout, "Device %s supports ", buf);
 
-        clGetDeviceInfo(id, CL_DEVICE_VERSION, 128, buf, NULL);
-        fprintf(stdout, "%s\n", buf);
+int setup(const size_t numberRange){
 
-}
+	// Create the buffer we are going to operate on
+//	const size_t numberRange = 4*std::exp2(25);
+	numbers = new int[numberRange];
 
-void printDevicesOnPlatform(cl_platform_id platform){
+	// create the buffer we are going to write the results into
+	size_t bufSize = numberRange; // how many results we want
+	numbersCopy = new int[bufSize];
 
-    cl_uint num_devices, i = -1;
-    clGetDeviceIDs(platform, CL_DEVICE_TYPE_ALL, 0, NULL, &num_devices);
-	fprintf(stdout, "Found %d devices.\n", num_devices);
-
-    cl_device_id devices[num_devices];
-    clGetDeviceIDs(platform, CL_DEVICE_TYPE_ALL, num_devices, devices, NULL);
-
-    for (i = 0; i < num_devices; i++) {
-		printDeviceInfo(devices[i]);
-    }
-
-}
- 
-int main(void) {
-    // Create the two input vectors
-    int i;
-    const int LIST_SIZE = 1024;
-    int *A = (int*)malloc(sizeof(int)*LIST_SIZE);
-    int *B = (int*)malloc(sizeof(int)*LIST_SIZE);
-
-    for(i = 0; i < LIST_SIZE; i++) {
-        A[i] = i;
-        B[i] = LIST_SIZE - i;
-    }
- 
-    // Load the kernel source code into the array source_str
-    FILE *fp;
-    char *source_str;
-    size_t source_size;
- 
-    fp = fopen("kernel.cl", "r");
-    if (!fp) {
-        fprintf(stderr, "Failed to load kernel.\n");
-        exit(1);
-    }
-    source_str = (char*)malloc(MAX_SOURCE_SIZE);
-    source_size = fread( source_str, 1, MAX_SOURCE_SIZE, fp);
-    fclose( fp );
- 
-    // Get platform and device information
-    cl_platform_id platform_id[2];
-    cl_device_id device_id = NULL;   
-    cl_uint ret_num_devices;
-    cl_uint ret_num_platforms;
-    cl_int ret = clGetPlatformIDs(2, platform_id, &ret_num_platforms);
-    ret = clGetDeviceIDs( platform_id[0], CL_DEVICE_TYPE_DEFAULT, 1, 
-            &device_id, &ret_num_devices);
-
-    if(ret != CL_SUCCESS){
-		clCheckError(ret);
-		exit(1);
+	// fill in the numbers
+	for(int i = 0; i < numberRange; i++) {
+		numbers[i] = i;
 	}
 
-	char buf[128];
-	clGetDeviceInfo(device_id, CL_DEVICE_NAME, 128, buf, NULL);
-	fprintf(stdout, "Device %s supports.\n", buf);
+	// Create and setup the context to and assign the deviceId we will be using
+	context = setupContext(&deviceId);
 
-	printPlatformName(platform_id[0]);
- 
-    if(ret != CL_SUCCESS){
-		clCheckError(ret);
-		exit(1);
-	}
-
-    ret = clGetDeviceIDs( platform_id[0], CL_DEVICE_TYPE_DEFAULT, 1, 
-            &device_id, &ret_num_devices);
-
-	char outBuf[256];
-	size_t outBufWritten = 0;
-	clGetPlatformInfo(platform_id[0], CL_PLATFORM_NAME, 256, outBuf, &outBufWritten);
-	fprintf(stdout, "Using %d Platform name %s.\n", 0, outBuf);
-	printDeviceInfo(device_id);
- 
+	// Create a command queue to push commands into
+	commandQueue = clCreateCommandQueue(context, deviceId, 0, &ret);
 	clCheckError(ret);
 
+	// Create our compute kernel for the device, context and the entry point
+	kernel = createKernel(
+		"kernel.cl", // filepath to kernel source
+		"add", // entry point name
+		context, // opencl context
+		deviceId // device to build against
+		);
 
+	// Write the buffer of numbers into the memory space the kernel will access
+	return 0;
+}
+int run(const size_t bufSize, size_t division) {
+	// Tell the device that we want to run the kernel, and how it's compute space should be divided up
+	const size_t localWorkgroupSize = 32; // how big each workgroup should be
+	const size_t globalWorkSize = bufSize*bufSize; // total index space for the kernel
 
-    // Create an OpenCL context
-    cl_context context = clCreateContext( NULL, 1, &device_id, NULL, NULL, &ret);
-    if(ret != CL_SUCCESS){
-		clCheckError(ret);
-		exit(1);
-	}
+	numbersMemObj = setBufferIntoKernel<int>(context, // context
+	                                    numbers, // buffer
+	                                    bufSize,
+	                                    kernel, // kernel to set into
+	                                    commandQueue,
+	                                    0 // argument index in the kernel (left to right, zero indexed)
+	);
+	//Create a buffer that we read the results put into the second argument of the kernel into
+	numberoutMemObj = createBuffer<int>(context, bufSize*bufSize, kernel, commandQueue, 1);
 
-	cl_device_id used_device_id;
-	ret = clGetContextInfo(context, CL_CONTEXT_DEVICES, sizeof used_device_id, &used_device_id, NULL);
-    if(ret != CL_SUCCESS){
-		clCheckError(ret);
-		exit(1);
-	}
-	std::memset(buf, 0, sizeof buf);
-	clGetDeviceInfo(device_id, CL_DEVICE_NAME, 128, buf, NULL);
-	fprintf(stdout, "Using %s for context device.\n", buf);
+	// std::cout << "Enqueuing kernel with " << globalWorkSize 
+	// << " global index into local group size " << localWorkgroupSize << std::endl;
+	ret = clEnqueueNDRangeKernel(commandQueue, kernel, 1, NULL, &globalWorkSize,
+	                             &localWorkgroupSize, 0, NULL, &kernelEnqueueToWaitFor);
+	clCheckError(ret);
+
+	ret = clEnqueueReadBuffer(commandQueue, numberoutMemObj, CL_TRUE, 0, (bufSize*bufSize) * sizeof(int),
+	                          numbersCopy, 1, &kernelEnqueueToWaitFor, NULL);
+	clCheckError(ret);
 	
- 
-    // Create a command queue
-    cl_command_queue command_queue = clCreateCommandQueue(context, device_id, 0, &ret);
-    if(ret != CL_SUCCESS){
-		clCheckError(ret);
-		exit(1);
-	}
- 
-    // Create memory buffers on the device for each vector 
-    cl_mem a_mem_obj = clCreateBuffer(context, CL_MEM_READ_ONLY, 
-            LIST_SIZE * sizeof(int), NULL, &ret);
-    if(ret != CL_SUCCESS){
-		clCheckError(ret);
-		exit(1);
-	}
-    cl_mem b_mem_obj = clCreateBuffer(context, CL_MEM_READ_ONLY,
-            LIST_SIZE * sizeof(int), NULL, &ret);
-    if(ret != CL_SUCCESS){
-		clCheckError(ret);
-		exit(1);
-	}
-    cl_mem c_mem_obj = clCreateBuffer(context, CL_MEM_WRITE_ONLY, 
-            LIST_SIZE * sizeof(int), NULL, &ret);
-    if(ret != CL_SUCCESS){
-		clCheckError(ret);
-		exit(1);
-	}
- 
-    // Copy the lists A and B to their respective memory buffers
-    ret = clEnqueueWriteBuffer(command_queue, a_mem_obj, CL_TRUE, 0,
-            LIST_SIZE * sizeof(int), A, 0, NULL, NULL);
-	clCheckError(ret);
 
-    ret = clEnqueueWriteBuffer(command_queue, b_mem_obj, CL_TRUE, 0, 
-            LIST_SIZE * sizeof(int), B, 0, NULL, NULL);
-	clCheckError(ret);
- 
-    // Create a program from the kernel source
-    cl_program program = clCreateProgramWithSource(context, 1, 
-            (const char **)&source_str, (const size_t *)&source_size, &ret);
-    if(ret != CL_SUCCESS){
-		clCheckError(ret);
-		exit(1);
-	}
- 
-    // Build the program
-    ret = clBuildProgram(program, 1, &device_id, NULL, NULL, NULL);
-	clCheckError(ret);
- 
-    // Create the OpenCL kernel
-    cl_kernel kernel = clCreateKernel(program, "vector_add", &ret);
-    if(ret != CL_SUCCESS){
-		clCheckError(ret);
-		exit(1);
-	}
- 
-    // Set the arguments of the kernel
-    ret = clSetKernelArg(kernel, 0, sizeof(cl_mem), (void *)&a_mem_obj);
-    if(ret != CL_SUCCESS){
-		clCheckError(ret);
-		exit(1);
-	}
-    ret = clSetKernelArg(kernel, 1, sizeof(cl_mem), (void *)&b_mem_obj);
-    if(ret != CL_SUCCESS){
-		clCheckError(ret);
-		exit(1);
-	}
-    ret = clSetKernelArg(kernel, 2, sizeof(cl_mem), (void *)&c_mem_obj);
-	clCheckError(ret);
- 
-    // Execute the OpenCL kernel on the list
-    size_t global_item_size = LIST_SIZE; // Process the entire lists
-    size_t local_item_size = 32; // Divide work items into groups of 64
-    ret = clEnqueueNDRangeKernel(command_queue, kernel, 1, NULL, 
-            &global_item_size, &local_item_size, 0, NULL, NULL);
-	clCheckError(ret);
- 
-    // Read the memory buffer C on the device to the local variable C
-    int *C = (int*)malloc(sizeof(int)*LIST_SIZE);
-    ret = clEnqueueReadBuffer(command_queue, c_mem_obj, CL_TRUE, 0, 
-            LIST_SIZE * sizeof(int), C, 0, NULL, NULL);
-	clCheckError(ret);
- 
-    // Display the result to the screen
-    //for(i = 0; i < LIST_SIZE; i++)
-     //   printf("%d + %d = %d\n", A[i], B[i], C[i]);
- 
-    // Clean up
-    ret = clFlush(command_queue);
-    ret = clFinish(command_queue);
-    ret = clReleaseKernel(kernel);
-    ret = clReleaseProgram(program);
-    ret = clReleaseMemObject(a_mem_obj);
-    ret = clReleaseMemObject(b_mem_obj);
-    ret = clReleaseMemObject(c_mem_obj);
-    ret = clReleaseCommandQueue(command_queue);
-    ret = clReleaseContext(context);
-    free(A);
-    free(B);
-    free(C);
-    return 0;
+	return 0;
 }
+
+static void BM_OpenCL_Add(benchmark::State& state){
+	setup(
+		std::exp2(state.range(0))
+		);
+
+	for(auto _ : state){
+		run(std::exp2(state.range(0)), 4);
+	}
+
+
+	cleanContext(context);
+	free(numbers);
+	free(numbersCopy);
+
+}
+
+BENCHMARK(BM_OpenCL_Add)
+	->Iterations(1000)
+	->Unit(benchmark::kMillisecond)
+	->DenseRange(5, 20, 1)
+	// ->Arg(std::exp2(10))
+	// ->Arg(std::exp2(11))
+	// ->Arg(std::exp2(12))
+	// ->Arg(std::exp2(13))
+	// ->Arg(std::exp2(14))
+	// ->Arg(std::exp2(16))
+	// ->Arg(std::exp2(17))
+	// ->Arg(std::exp2(18))
+	// ->Arg(std::exp2(19))
+	// ->Arg(std::exp2(20))
+	;
+
+int main(){
+	setup(10);
+	run(10, 2);
+	cleanContext(context);
+	free(numbers);
+	free(numbersCopy);
+
+	return 0;
+}
+//BENCHMARK_MAIN();
+
