@@ -8,6 +8,7 @@
 #include <iostream>
 #include <cmath>
 #include <benchmark/benchmark.h>
+#include <vector>
 // #include "catch.hpp"
 
 
@@ -96,7 +97,6 @@ int run(const size_t bufSize, size_t division) {
 	ret = clEnqueueReadBuffer(commandQueue, numberoutMemObj, CL_TRUE, 0, (bufSize*bufSize) * sizeof(int),
 	                          numbersCopy, 1, &kernelEnqueueToWaitFor, NULL);
 	clCheckError(ret);
-	
 
 	return 0;
 }
@@ -117,6 +117,59 @@ static void BM_OpenCL_Add(benchmark::State& state){
 
 }
 
+/**
+ * Generates permutations according to lexicographic generation
+ * using the algorithm from Algorithm L in Chapter 7.2.1.3 of 
+ * The Art of Computer Programming Volume 4A Part 1 by Donald E. Knuth.
+ * 
+ * param n the size of the index can take in range {0...n-1}
+ * param t how many positions you want in the permutation
+ * returns a contingious vector of the permutations
+ **/
+static std::vector<uint32_t> Generate_Permutations(const uint32_t n, const uint32_t t){
+	// Complete list
+	std::vector<uint32_t> sup_c;
+
+	// Temp c to keep list in, +2 for the sentenials
+	uint32_t* c = new uint32_t[t+2];
+
+	for(int i = 0; i < t; i++){
+		c[i] = i;
+		sup_c.push_back(i);
+	}
+
+	// Put some sentenials in
+	c[t] = n;
+	c[t+1] = 0;
+
+	uint32_t j = 0;
+	while(true){
+		j = 0;
+		// Keep going until we find the largest index we can increase
+		while(c[j]+1 == c[j+1]){
+			c[j] = j;
+			j++;
+		}
+
+		// If we've gone too far to hit the sentenials we stop the algorthm
+		if((j+1) > t){
+			break;
+		}
+
+		// Increase the largest index we can
+		c[j] = c[j]+1;
+
+		// We could probably store the indexes as we can increase
+		// but we will just do it here instead for simplicity
+		for(int i = 0; i < t; i++){
+			sup_c.push_back(c[i]);
+		}
+	}
+
+	sup_c.shrink_to_fit();
+	return sup_c;
+}
+
 BENCHMARK(BM_OpenCL_Add)
 	->Iterations(1000)
 	->Unit(benchmark::kMillisecond)
@@ -133,12 +186,24 @@ BENCHMARK(BM_OpenCL_Add)
 	// ->Arg(std::exp2(20))
 	;
 
+
+
 int main(){
-	setup(10);
-	run(10, 2);
-	cleanContext(context);
-	free(numbers);
-	free(numbersCopy);
+	// setup(10);
+	// run(10, 2);
+	// cleanContext(context);
+	// free(numbers);
+	// free(numbersCopy);
+	int t = 3;
+	std::vector<uint32_t> numbers = Generate_Permutations(4, t);
+
+	for(int i = 0; i < numbers.size(); i++){
+		std::cout << numbers[i] << ", ";
+		if((i+1) % t == 0){
+			std::cout << std::endl;
+		}
+	}
+
 
 	return 0;
 }
