@@ -15,7 +15,7 @@ def parition(n, k):
 
 
 def gen_permutations(n, t):
-   """ 
+   """
     Lexicographic generation where each number is always strictly greater than the previous.
 
     :param n: the size of the index can take in range {0...n-1}.
@@ -24,7 +24,7 @@ def gen_permutations(n, t):
 
     :returns: list of all the permutations
 
-    This is based off Algorithm L in Chapter 7.2.1.3 of 
+    This is based off Algorithm L in Chapter 7.2.1.3 of
     The Art of Computer Programming Volume 4A Part 1 by Donald E. Knuth
    """
    sup_c = []
@@ -51,7 +51,8 @@ def gen_permutations(n, t):
         c[j] = c[j]+1
         # cut out the sentinels
         sup_c.append(c[:t].copy())
-    return sup_c
+
+   return sup_c
 
 
 if __name__ == "__main__":
