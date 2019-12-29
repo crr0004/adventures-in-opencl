@@ -34,7 +34,7 @@ void printDevicesOnPlatform(cl_platform_id platform) {
 }
 cl_context setupContext(cl_device_id *usedDeviceId) {
 	// Setup the variables for context setup
-	size_t platformsToGet = 1;
+	size_t platformsToGet = 5;
 	cl_platform_id platform_id[platformsToGet];
 	cl_device_id device_id = NULL;
 	cl_uint ret_num_devices;
@@ -43,10 +43,10 @@ cl_context setupContext(cl_device_id *usedDeviceId) {
 
 	// Grab the platforms
 	cl_int ret = clGetPlatformIDs(platformsToGet, platform_id, &ret_num_platforms);
-	// fprintf(stdout, "%d number of platforms\n", ret_num_platforms);
+	 fprintf(stdout, "%d number of platforms\n", ret_num_platforms);
 
 	// Grab the second device
-	ret = clGetDeviceIDs(platform_id[0], CL_DEVICE_TYPE_DEFAULT, 1, &device_id, &ret_num_devices);
+	ret = clGetDeviceIDs(platform_id[ret_num_platforms-1], CL_DEVICE_TYPE_DEFAULT, 1, &device_id, &ret_num_devices);
 	if(ret != CL_SUCCESS) {
 		clCheckError(ret);
 		exit(1);
@@ -58,8 +58,9 @@ cl_context setupContext(cl_device_id *usedDeviceId) {
 	// fprintf(stdout, "Device %s supports.\n", buf);
 
 	for(int i = 0; i < ret_num_platforms; i++){
-		// printPlatformName(platform_id[i]);
+		printPlatformName(platform_id[i]);
 	}
+	printDeviceInfo(device_id);
 
 	if(ret != CL_SUCCESS) {
 		clCheckError(ret);

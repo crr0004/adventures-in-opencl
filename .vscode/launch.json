@@ -7,7 +7,7 @@
         {
             "id": "projectFolder",
             "type": "pickString",
-            "default": "summing_numbers",
+            "default": "part_2",
             "description": "Folder that you want to build.",
             "options": [
                 "part_2",
@@ -55,7 +55,8 @@
             "miDebuggerPath": "gdb",
             "setupCommands": [
                  
-            ]
+            ],
+            "preLaunchTask": "Build"
         },
         {
             "name": "Python: Current File",

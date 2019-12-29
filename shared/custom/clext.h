@@ -100,7 +100,7 @@ const char* clGetErrorString(int errorCode) {
 int clCheckError(int errorCode) {
 	if (errorCode != 0) {
 		fprintf(stderr, "Error in openCL call %s\n", clGetErrorString(errorCode));
-		std::exit(errorCode);
+		std::exit(-1);
 	}
 	return errorCode;
 }

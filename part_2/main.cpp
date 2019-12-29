@@ -9,6 +9,7 @@
 #include <cmath>
 #include <benchmark/benchmark.h>
 #include <vector>
+#include <random>
 // #include "catch.hpp"
 
 
@@ -19,10 +20,12 @@ cl_kernel kernel; // kernel pointer
 cl_device_id deviceId; // device we are going to use
 cl_command_queue commandQueue;
 cl_mem numberoutMemObj;
+cl_mem partitionsMemObj;
 cl_int ret; // error number holder
 cl_event kernelEnqueueToWaitFor; // a sync event to wait for
-int *numbers;
-int *numbersCopy;
+std::vector<int> numbers;
+std::vector<int> numbersCopy;
+std::vector<uint32_t> partitionsPermutations;
 
 void cleanContext(cl_context context){// Just grab the kernel program so we can release it
 	cl_program program;
@@ -40,20 +43,43 @@ void cleanContext(cl_context context){// Just grab the kernel program so we can 
 	clReleaseContext(context);
 }
 
-int setup(const size_t numberRange){
+int setup(const size_t numberRange, const size_t partitions){
+
+	// Move the number range back one for permutations because we are doing exclusive range
+	partitionsPermutations = Generate_Permutations<uint32_t>(numberRange-1, partitions);
+	
+	/*
+	// Dump out the permutations
+	for(int i = 0; i < partitionsPermutations.size(); i++){
+		std::cout << partitionsPermutations[i] << ", ";
+		if((i+1) % partitions == 0){
+			// std::cout << std::endl;
+		}
+	}
+	*/
+	
 
 	// Create the buffer we are going to operate on
 //	const size_t numberRange = 4*std::exp2(25);
-	numbers = new int[numberRange];
+	// From https://en.cppreference.com/w/cpp/numeric/random/uniform_int_distribution
+	std::random_device rd; // Will be used to obtain a seed for the random number engine
+	std::mt19937 gen(rd()); //Standard mersenne_twister_engine seeded with rd()
+    std::uniform_int_distribution<> dis(1, 9);
+ 
+	numbers = std::vector<int>(numberRange);
 
 	// create the buffer we are going to write the results into
 	size_t bufSize = numberRange; // how many results we want
-	numbersCopy = new int[bufSize];
+	numbersCopy = std::vector<int>(bufSize);
 
-	// fill in the numbers
+	// fill in the numbers between our range we set in dis()
+	// std::cout << "Summing: ";
+	// numbers = {6, 7, 4, 9};
 	for(int i = 0; i < numberRange; i++) {
-		numbers[i] = i;
+		numbers[i] = dis(gen);
+		// std::cout << numbers[i] << ", ";
 	}
+	std::cout << std::endl;
 
 	// Create and setup the context to and assign the deviceId we will be using
 	context = setupContext(&deviceId);
@@ -73,20 +99,40 @@ int setup(const size_t numberRange){
 	// Write the buffer of numbers into the memory space the kernel will access
 	return 0;
 }
-int run(const size_t bufSize, size_t division) {
+
+int run(const size_t partitions) {
 	// Tell the device that we want to run the kernel, and how it's compute space should be divided up
 	const size_t localWorkgroupSize = 32; // how big each workgroup should be
-	const size_t globalWorkSize = bufSize*bufSize; // total index space for the kernel
+	const size_t globalWorkSize = partitionsPermutations.size()/partitions;
 
-	numbersMemObj = setBufferIntoKernel<int>(context, // context
-	                                    numbers, // buffer
-	                                    bufSize,
+	partitionsMemObj = setBufferIntoKernel<uint32_t>(context, // context
+	                                    partitionsPermutations.data(), // buffer
+	                                    partitionsPermutations.size(),
 	                                    kernel, // kernel to set into
 	                                    commandQueue,
 	                                    0 // argument index in the kernel (left to right, zero indexed)
 	);
-	//Create a buffer that we read the results put into the second argument of the kernel into
-	numberoutMemObj = createBuffer<int>(context, bufSize*bufSize, kernel, commandQueue, 1);
+
+	numbersMemObj = setBufferIntoKernel<int>(context, // context
+	                                    numbers.data(), // buffer
+	                                    numbers.size(),
+	                                    kernel, // kernel to set into
+	                                    commandQueue,
+	                                    1 // argument index in the kernel (left to right, zero indexed)
+	);
+	ret = clSetKernelArg(kernel, 2, sizeof(int), (const void*)&partitions);
+	clCheckError(ret);
+
+	size_t numbersSize = numbers.size();
+	ret = clSetKernelArg(kernel, 3, sizeof(int), (const void*)&numbersSize);
+	clCheckError(ret);
+
+	// allocate a local buffer for the workgroups
+	ret = clSetKernelArg(kernel, 4, sizeof(int) * localWorkgroupSize, NULL);
+	clCheckError(ret);
+
+	// Create a buffer that we read the results put into
+	numberoutMemObj = createBuffer<int>(context, 1, kernel, commandQueue, 5);
 
 	// std::cout << "Enqueuing kernel with " << globalWorkSize 
 	// << " global index into local group size " << localWorkgroupSize << std::endl;
@@ -94,81 +140,31 @@ int run(const size_t bufSize, size_t division) {
 	                             &localWorkgroupSize, 0, NULL, &kernelEnqueueToWaitFor);
 	clCheckError(ret);
 
-	ret = clEnqueueReadBuffer(commandQueue, numberoutMemObj, CL_TRUE, 0, (bufSize*bufSize) * sizeof(int),
-	                          numbersCopy, 1, &kernelEnqueueToWaitFor, NULL);
+	// Read out the write buffer we set before
+	int numOut = -1;
+	ret = clEnqueueReadBuffer(commandQueue, numberoutMemObj, CL_TRUE, 0, sizeof(int),
+	                           (void *)&numOut, 1, &kernelEnqueueToWaitFor, NULL);
 	clCheckError(ret);
+	std::cout << "Max " << numOut << std::endl;
 
 	return 0;
 }
 
 static void BM_OpenCL_Add(benchmark::State& state){
+	size_t partitions = 3;
 	setup(
-		std::exp2(state.range(0))
+		std::exp2(state.range(0)),
+		partitions
 		);
 
 	for(auto _ : state){
-		run(std::exp2(state.range(0)), 4);
+		run(partitions);
 	}
 
 
 	cleanContext(context);
-	free(numbers);
-	free(numbersCopy);
-
 }
 
-/**
- * Generates permutations according to lexicographic generation
- * using the algorithm from Algorithm L in Chapter 7.2.1.3 of 
- * The Art of Computer Programming Volume 4A Part 1 by Donald E. Knuth.
- * 
- * param n the size of the index can take in range {0...n-1}
- * param t how many positions you want in the permutation
- * returns a contingious vector of the permutations
- **/
-static std::vector<uint32_t> Generate_Permutations(const uint32_t n, const uint32_t t){
-	// Complete list
-	std::vector<uint32_t> sup_c;
-
-	// Temp c to keep list in, +2 for the sentenials
-	uint32_t* c = new uint32_t[t+2];
-
-	for(int i = 0; i < t; i++){
-		c[i] = i;
-		sup_c.push_back(i);
-	}
-
-	// Put some sentenials in
-	c[t] = n;
-	c[t+1] = 0;
-
-	uint32_t j = 0;
-	while(true){
-		j = 0;
-		// Keep going until we find the largest index we can increase
-		while(c[j]+1 == c[j+1]){
-			c[j] = j;
-			j++;
-		}
-
-		// If we've gone too far to hit the sentenials we stop the algorthm
-		if((j+1) > t){
-			break;
-		}
-
-		// Increase the largest index we can
-		c[j] = c[j]+1;
-
-		// We could probably store the indexes as we can increase
-		// but we will just do it here instead for simplicity
-		for(int i = 0; i < t; i++){
-			sup_c.push_back(c[i]);
-		}
-	}
-
-	sup_c.shrink_to_fit();
-	return sup_c;
-}
 
 BENCHMARK(BM_OpenCL_Add)
 	->Iterations(1000)
@@ -189,20 +185,13 @@ BENCHMARK(BM_OpenCL_Add)
 
 
 int main(){
-	// setup(10);
-	// run(10, 2);
-	// cleanContext(context);
+	int partitions = 2;
+	setup(400, partitions);
+	run(partitions);
+	cleanContext(context);
 	// free(numbers);
 	// free(numbersCopy);
-	int t = 3;
-	std::vector<uint32_t> numbers = Generate_Permutations(4, t);
 
-	for(int i = 0; i < numbers.size(); i++){
-		std::cout << numbers[i] << ", ";
-		if((i+1) % t == 0){
-			std::cout << std::endl;
-		}
-	}
 
 
 	return 0;
