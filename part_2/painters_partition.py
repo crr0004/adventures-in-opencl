@@ -6,7 +6,7 @@ def parition(n, k):
 
     a = []
     for i in range(len(n)):
-        #print(n[i+1:])
+        # print(n[i:])
         b =  [parition(n[:i+1], k-1), sum(n[i+1:] )]
         a.append( max(
           b 
