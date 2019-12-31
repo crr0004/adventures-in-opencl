@@ -6,7 +6,7 @@ def parition(n, k):
 
     a = []
     for i in range(len(n)):
-        print(n[i+1:])
+        #print(n[i+1:])
         b =  [parition(n[:i+1], k-1), sum(n[i+1:] )]
         a.append( max(
           b 
@@ -56,7 +56,7 @@ def gen_permutations(n, t):
 
 
 if __name__ == "__main__":
-    # input = [1,2,3,4,5,6,7,8,9]
-    # partitions = 3
-    # print(parition(input, partitions))
-    print(gen_permutations(10, 3))
+    input = [6, 7, 4, 9]
+    partitions = 3
+    print(parition(input, partitions))
+    #print(gen_permutations(10, 3))

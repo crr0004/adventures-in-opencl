@@ -43,10 +43,17 @@ void cleanContext(cl_context context){// Just grab the kernel program so we can 
 	clReleaseContext(context);
 }
 
-int setup(const size_t numberRange, const size_t partitions){
+/**
+ * @brief Setup the random numbers and buffers for the kernels to run on.
+ * @see run
+ * 
+ * @param numberRange how many numbers to generate between 1-9
+ * @param dividers how many dividers you want to solve for I.E dividers+1 is how many painters there are
+ */
+void setup(const size_t numberRange, const size_t dividers){
 
 	// Move the number range back one for permutations because we are doing exclusive range
-	partitionsPermutations = Generate_Permutations<uint32_t>(numberRange-1, partitions);
+	partitionsPermutations = Generate_Permutations<uint32_t>(numberRange-1, dividers);
 	
 	/*
 	// Dump out the permutations
@@ -95,15 +102,19 @@ int setup(const size_t numberRange, const size_t partitions){
 		context, // opencl context
 		deviceId // device to build against
 		);
-
-	// Write the buffer of numbers into the memory space the kernel will access
-	return 0;
+	return;
 }
 
-int run(const size_t partitions) {
+/**
+ * @brief Runs the kernel for solving the painters partition problem.
+ * 
+ * @param dividers how many dividers you want to solve for I.E dividers+1 is how many painters there are
+ * @return int the optimum partition size
+ */
+int run(const size_t dividers) {
 	// Tell the device that we want to run the kernel, and how it's compute space should be divided up
 	const size_t localWorkgroupSize = 32; // how big each workgroup should be
-	const size_t globalWorkSize = partitionsPermutations.size()/partitions;
+	const size_t globalWorkSize = partitionsPermutations.size()/dividers;
 
 	partitionsMemObj = setBufferIntoKernel<uint32_t>(context, // context
 	                                    partitionsPermutations.data(), // buffer
@@ -120,7 +131,7 @@ int run(const size_t partitions) {
 	                                    commandQueue,
 	                                    1 // argument index in the kernel (left to right, zero indexed)
 	);
-	ret = clSetKernelArg(kernel, 2, sizeof(int), (const void*)&partitions);
+	ret = clSetKernelArg(kernel, 2, sizeof(int), (const void*)&dividers);
 	clCheckError(ret);
 
 	size_t numbersSize = numbers.size();
@@ -150,6 +161,11 @@ int run(const size_t partitions) {
 	return 0;
 }
 
+/**
+ * @brief run the benchmark
+ * 
+ * @param state given by the benchmark framework
+ */
 static void BM_OpenCL_Add(benchmark::State& state){
 	size_t partitions = 3;
 	setup(
@@ -181,13 +197,15 @@ BENCHMARK(BM_OpenCL_Add)
 	// ->Arg(std::exp2(19))
 	// ->Arg(std::exp2(20))
 	;
+// uncomment to run benchmark, remember to comment out int main()
+//BENCHMARK_MAIN();
 
 
 
 int main(){
-	int partitions = 2;
-	setup(400, partitions);
-	run(partitions);
+	int dividers = 2;
+	setup(400, dividers);
+	run(dividers);
 	cleanContext(context);
 	// free(numbers);
 	// free(numbersCopy);
@@ -196,5 +214,4 @@ int main(){
 
 	return 0;
 }
-//BENCHMARK_MAIN();
 
