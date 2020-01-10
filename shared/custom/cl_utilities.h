@@ -164,11 +164,12 @@ template<typename T> cl_mem setBufferIntoKernel(
 	size_t size,
 	cl_kernel kernel, 
 	cl_command_queue commandQueue,
-	cl_uint index
+	cl_uint index,
+	cl_mem_flags memFlags = CL_MEM_READ_ONLY
 	){
 
     cl_int ret;
-	cl_mem memObject = clCreateBuffer(context, CL_MEM_READ_ONLY, size * sizeof(T), NULL, &ret);
+	cl_mem memObject = clCreateBuffer(context, memFlags, size * sizeof(T), NULL, &ret);
 	clCheckError(ret);
 
 	ret = clEnqueueWriteBuffer(commandQueue, memObject, CL_TRUE, 0, size * sizeof(T), numbers, 0, NULL, NULL);

@@ -77,16 +77,17 @@ void setup(const size_t numberRange, const size_t dividers){
 
 	// create the buffer we are going to write the results into
 	size_t bufSize = numberRange; // how many results we want
-	numbersCopy = std::vector<int>(bufSize);
+	// numbersCopy = std::vector<int>(bufSize);
+
+	// std::cout << "Summing: ";
+	// numbers = {6, 7, 4, 9}; // uncomment for hard coding, comment out loop as well
 
 	// fill in the numbers between our range we set in dis()
-	// std::cout << "Summing: ";
-	// numbers = {6, 7, 4, 9};
 	for(int i = 0; i < numberRange; i++) {
 		numbers[i] = dis(gen);
 		// std::cout << numbers[i] << ", ";
 	}
-	std::cout << std::endl;
+	// std::cout << std::endl;
 
 	// Create and setup the context to and assign the deviceId we will be using
 	context = setupContext(&deviceId);
@@ -131,6 +132,7 @@ int run(const size_t dividers) {
 	                                    commandQueue,
 	                                    1 // argument index in the kernel (left to right, zero indexed)
 	);
+	// sets some constants
 	ret = clSetKernelArg(kernel, 2, sizeof(int), (const void*)&dividers);
 	clCheckError(ret);
 
@@ -142,8 +144,18 @@ int run(const size_t dividers) {
 	ret = clSetKernelArg(kernel, 4, sizeof(int) * localWorkgroupSize, NULL);
 	clCheckError(ret);
 
+	// Set the default out number to the min function works correctly
+	int numOutDefault = INT_MAX;
 	// Create a buffer that we read the results put into
-	numberoutMemObj = createBuffer<int>(context, 1, kernel, commandQueue, 5);
+	numberoutMemObj = setBufferIntoKernel<int>(
+		context,
+		&numOutDefault,
+		1,
+		kernel,
+		commandQueue,
+		5,
+		CL_MEM_READ_WRITE
+	);
 
 	// std::cout << "Enqueuing kernel with " << globalWorkSize 
 	// << " global index into local group size " << localWorkgroupSize << std::endl;
@@ -152,7 +164,7 @@ int run(const size_t dividers) {
 	clCheckError(ret);
 
 	// Read out the write buffer we set before
-	int numOut = -1;
+	int numOut = numOutDefault;
 	ret = clEnqueueReadBuffer(commandQueue, numberoutMemObj, CL_TRUE, 0, sizeof(int),
 	                           (void *)&numOut, 1, &kernelEnqueueToWaitFor, NULL);
 	clCheckError(ret);
@@ -204,7 +216,8 @@ BENCHMARK(BM_OpenCL_Add)
 
 int main(){
 	int dividers = 2;
-	setup(400, dividers);
+	int numbersToGenerate = 4;
+	setup(numbersToGenerate, dividers);
 	run(dividers);
 	cleanContext(context);
 	// free(numbers);

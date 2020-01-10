@@ -16,9 +16,7 @@
             "compilerPath": "${config:user.mingw-w64-path}/bin/clang++.exe",
             "intelliSenseMode": "clang-x64",
             "cStandard": "c11",
-            "cppStandard": "c++11",
-            "configurationProvider": "vector-of-bool.cmake-tools",
-            "compileCommands": "${workspaceFolder}/build/compile_commands.json"
+            "cppStandard": "c++11"
         }
     ],
     "version": 4

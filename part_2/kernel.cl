@@ -1,7 +1,7 @@
 __kernel void add(
 	__global int *partitionPermutations, 
 	__global int *numbers, 
-	int partitions,
+	int dividers,
 	int numbersSize,
 	__local int *maxSums,
 	__global int *numOut
@@ -17,8 +17,8 @@ __kernel void add(
 	 * The first and last partition is done out of the loop to simply the logic of the primary loop.
 	 */
 
-	// each index has number of partitions of numbers in it
-	int startIndex = globali * partitions;
+	// each index has number of dividers of numbers in it
+	int startIndex = globali * dividers;
 	int maxSum = 0;
 
 	int sum = 0;
@@ -32,31 +32,27 @@ __kernel void add(
 	sum = 0;
 
 	// do the last sum out of the loop
-	for(int i = 0; i < partitions-1; i++){
+	for(int i = 0; i < dividers-1; i++){
 		int sumStart = partitionPermutations[startIndex+i]+1;
 		int sumEnd = partitionPermutations[startIndex+i+1]+1;
 		int sum = 0;
 		for(int j = sumStart; j < sumEnd; j++){
 			sum += numbers[j];
 		}
-		maxSum = max(sum, maxSum);
+		maxSum = max(maxSum, sum);
 
 	}
-	int sumStart = partitionPermutations[startIndex+partitions-1]+1;
+	int sumStart = partitionPermutations[startIndex+dividers-1]+1;
 	// printf("Start, end: %d, %d\n", sumStart, numbersSize);
 	sum = 0;
 	for(int j = sumStart; j < numbersSize; j++){
 		sum += numbers[j];
-		// printf("%d\tsum: %d\t", globali, sum);
+		printf("%d\tsum: %d\t", globali, sum);
 	}
 	maxSum = max(sum, maxSum);
 	// printf("%d\t%d", globali, maxSum);
 
 	// store the results
 	// maxSums[locali] = maxSum;
-	atomic_max(&numOut[0], maxSum);
-	
-
-	
-	//vstore4(va + vb, i, numOut);
+	atomic_min(&numOut[0], maxSum);
 }

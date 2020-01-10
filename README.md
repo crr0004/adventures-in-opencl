@@ -20,5 +20,6 @@ files
 
 # Used libraries
 - Catch2 https://github.com/catchorg/Catch2
+- Google Benchmark https://github.com/google/benchmark/
 
 See LICENSE file for addition of respective licenses
