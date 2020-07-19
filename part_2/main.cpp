@@ -11,7 +11,7 @@
 #include <vector>
 #include <random>
 // #include "catch.hpp"
-
+#include <climits>
 
 // some openCL API objects
 cl_context context;
@@ -60,7 +60,7 @@ void setup(const size_t numberRange, const size_t dividers){
 	for(int i = 0; i < partitionsPermutations.size(); i++){
 		std::cout << partitionsPermutations[i] << ", ";
 		if((i+1) % partitions == 0){
-			// std::cout << std::endl;
+			// std::cout << "\n";
 		}
 	}
 	*/
@@ -87,7 +87,7 @@ void setup(const size_t numberRange, const size_t dividers){
 		numbers[i] = dis(gen);
 		// std::cout << numbers[i] << ", ";
 	}
-	// std::cout << std::endl;
+	// std::cout << "\n";
 
 	// Create and setup the context to and assign the deviceId we will be using
 	context = setupContext(&deviceId);
@@ -98,10 +98,12 @@ void setup(const size_t numberRange, const size_t dividers){
 
 	// Create our compute kernel for the device, context and the entry point
 	kernel = createKernel(
+		{
 		"kernel.cl", // filepath to kernel source
 		"add", // entry point name
 		context, // opencl context
 		deviceId // device to build against
+		}
 		);
 	return;
 }
@@ -158,7 +160,7 @@ int run(const size_t dividers) {
 	);
 
 	// std::cout << "Enqueuing kernel with " << globalWorkSize 
-	// << " global index into local group size " << localWorkgroupSize << std::endl;
+	// << " global index into local group size " << localWorkgroupSize << "\n";
 	ret = clEnqueueNDRangeKernel(commandQueue, kernel, 1, NULL, &globalWorkSize,
 	                             &localWorkgroupSize, 0, NULL, &kernelEnqueueToWaitFor);
 	clCheckError(ret);
@@ -168,7 +170,7 @@ int run(const size_t dividers) {
 	ret = clEnqueueReadBuffer(commandQueue, numberoutMemObj, CL_TRUE, 0, sizeof(int),
 	                           (void *)&numOut, 1, &kernelEnqueueToWaitFor, NULL);
 	clCheckError(ret);
-	std::cout << "Max " << numOut << std::endl;
+	std::cout << "Max " << numOut << "\n";
 
 	return 0;
 }

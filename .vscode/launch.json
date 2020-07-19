@@ -12,7 +12,8 @@
             "options": [
                 "part_2",
                 "naive_approach",
-                "summing_numbers"
+                "summing_numbers",
+                "reduce_optimisation"
             ]
         }
     ],

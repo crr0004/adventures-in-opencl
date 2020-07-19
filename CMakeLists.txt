@@ -3,8 +3,8 @@ project(adventures_in_opencl)
 
 # Disable testing in the benchmarking library
 set(BENCHMARK_ENABLE_TESTING OFF CACHE BOOL "")
-set(CMAKE_BUILD_TYPE Debug CACHE BOOL "" FORCE)
 add_subdirectory(benchmark)
+# set(CMAKE_BUILD_TYPE RelWithDebInfo CACHE BOOL "" FORCE)
 
 # Set CMAKE_BUILD_TYPE (default = Release)
 # if("${CMAKE_BUILD_TYPE}" STREQUAL "")
@@ -18,7 +18,6 @@ find_path( OPENCL_INCLUDE_DIRS
 NAMES OpenCL/cl.h CL/cl.h
 HINTS
 	ENV OPENCL_PATH
-	${CRR_OPENCL_INCLUDE_PATH}
 	${CMAKE_SOURCE_DIR}/shared/system/
 PATH_SUFFIXES
 	include
@@ -29,7 +28,6 @@ find_library(OPENCL_LIBRARIES
 	NAMES OpenCL libOpenCL.so libOpenCL.so.1
 	PATH_SUFFIXES
 	lib/x86_64/
-	/opt/amdgpu-pro/lib64/
 	HINTS ENV OPENCL_PATH
 )
 
@@ -37,7 +35,7 @@ find_library(OPENCL_LIBRARIES
 message(STATUS "Using " ${OPENCL_LIBRARIES})
 message(STATUS "Using " ${OPENCL_INCLUDE_DIRS})
 
-set( COMPILER_FLAGS "-fpermissive " )
+set( COMPILER_FLAGS "-fpermissive -fno-omit-frame-pointer" )
 set( LINKER_FLAGS " " )
 set( ADDITIONAL_LIBRARIES "" )
 set(LIBS ${OPENCL_LIBRARIES} ${ADDITIONAL_LIBRARIES} benchmark)
@@ -49,3 +47,4 @@ include_directories(SYSTEM ${OPENCL_INCLUDE_DIRS} ${CMAKE_SOURCE_DIR}/benchmark/
 add_subdirectory(naive_approach)
 add_subdirectory(summing_numbers)
 add_subdirectory(part_2)
+add_subdirectory(reduce_optimisation)

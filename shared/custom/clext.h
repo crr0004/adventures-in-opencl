@@ -97,12 +97,22 @@ const char* clGetErrorString(int errorCode) {
 /*
  * check cl error, if not CL_SUCCESS, print to stderr
  */
-int clCheckError(int errorCode) {
+
+int clCheckError(int errorCode, const char* message, bool exit){
 	if (errorCode != 0) {
-		fprintf(stderr, "Error in openCL call %s\n", clGetErrorString(errorCode));
-		std::exit(-1);
+		fprintf(stderr, "Message %s \nError in openCL call %s \n", message, clGetErrorString(errorCode));
+		if(exit) {
+			std::exit(-1);
+		}
 	}
 	return errorCode;
+}
+int clCheckError(int errorCode, const char* message){
+	return clCheckError(errorCode, message, true);
+}
+
+int clCheckError(int errorCode) {
+	return clCheckError(errorCode, "");
 }
 
 #endif /* __CL_EXT__*/

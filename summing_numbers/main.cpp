@@ -63,10 +63,12 @@ int setup(const size_t numberRange){
 
 	// Create our compute kernel for the device, context and the entry point
 	kernel = createKernel(
+		{
 		"kernel.cl", // filepath to kernel source
 		"add", // entry point name
 		context, // opencl context
 		deviceId // device to build against
+		}
 		);
 
 	// Write the buffer of numbers into the memory space the kernel will access
@@ -92,7 +94,7 @@ int runAdd(const size_t bufSize, size_t division) {
 
 
 	// std::cout << "Enqueuing kernel with " << globalWorkSize 
-	// << " global index into local group size " << localWorkgroupSize << std::endl;
+	// << " global index into local group size " << localWorkgroupSize << "\n";
 	ret = clEnqueueNDRangeKernel(commandQueue, kernel, 1, NULL, &globalWorkSize,
 	                             &localWorkgroupSize, 0, NULL, &kernelEnqueueToWaitFor);
 	clCheckError(ret);

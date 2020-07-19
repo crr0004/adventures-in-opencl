@@ -17,6 +17,28 @@
             "intelliSenseMode": "clang-x64",
             "cStandard": "c11",
             "cppStandard": "c++11"
+        },
+        {
+            "name": "Win Clang",
+            "cppStandard": "c++20",
+            "cStandard": "c11",
+            "intelliSenseMode": "clang-x64",
+            "compilerPath": "F:/dev/bin/llvm/bin/clang.exe",
+            "includePath": [
+                "F:\\dev\\bin\\llvm\\lib\\clang\\10.0.0\\include"
+            ],
+            "compileCommands": "${workspaceFolder}/build/compile_commands.json"
+        },
+        {
+            "name": "Linux Clang",
+            "includePath": [
+                "${workspaceFolder}/**"
+            ],
+            "defines": [],
+            "compilerPath": "/usr/bin/clang++",
+            "cStandard": "c11",
+            "cppStandard": "c++14",
+            "intelliSenseMode": "clang-x64"
         }
     ],
     "version": 4

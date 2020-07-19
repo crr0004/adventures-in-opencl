@@ -1354,7 +1354,7 @@ typedef union
  *
  *   Example:
  *
- *   const char *my_program = CL_PROGRAM_STRING_DEBUG_INFO "\
+ *   const char *my_program = CL_PROGRAM_STRING_DEBUG_INFO "\n"
  *   kernel void foo( int a, float * b )             \n\
  *   {                                               \n\
  *      // my comment                                \n\
@@ -1367,7 +1367,7 @@ typedef union
  */
 #define  __CL_STRINGIFY( _x )               # _x
 #define  _CL_STRINGIFY( _x )                __CL_STRINGIFY( _x )
-#define  CL_PROGRAM_STRING_DEBUG_INFO       "#line "  _CL_STRINGIFY(__LINE__) " \"" __FILE__ "\" \n\n"
+#define  CL_PROGRAM_STRING_DEBUG_INFO       "#line "  _CL_STRINGIFY(__LINE__) " \"" __FILE__ "\n"" \n\n"
 
 #ifdef __cplusplus
 }

@@ -70,5 +70,8 @@
         "typeinfo": "cpp",
         "valarray": "cpp",
         "variant": "cpp"
-    }
+    },
+    "cmake.configureArgs": [
+        "-DOPENCL_LIBRARIES=/opt/rocm/opencl/lib/libOpenCL.so"
+    ]
 }

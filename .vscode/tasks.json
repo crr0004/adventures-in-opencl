@@ -14,7 +14,7 @@
                     },
                     "cwd": "${workspaceFolder}/build"
                 },
-                "command": "ninja -v"
+                "command": "ninja"
             },
             "linux": {
                 "options": {
@@ -29,6 +29,36 @@
             "problemMatcher": [
                 "$gcc"
             ]
+        },
+        {
+            "label": "Build debug",
+            "group": "build",
+            "type": "shell",
+            "dependsOn": ["Run cmake debug", "Build"],
+            "dependsOrder": "sequence"
+        },
+
+        {
+            "label": "Run cmake debug",
+            "group": "build",
+            "type": "shell",
+            "windows": {
+                "options": {
+                    "env": {
+                        "PATH": "${config:user.mingw-w64-path}\\bin;${config:user.mingw-w64-path}\\x86_64-w64-mingw32\\bin;C:\\Windows\\System32",
+                        "CC": "clang",
+                        "CXX": "clang++"
+                    },
+                    "cwd": "${workspaceFolder}/build",
+                },
+                "command": "cmake -G Ninja ..",
+            },
+            "linux": {
+                "options": {
+                    "cwd": "${workspaceFolder}/build"
+                }
+            },
+            "command": "cmake -G Ninja -DCMAKE_BUILD_TYPE=DEBUG .."
         },
         {
             "label": "Run cmake",
