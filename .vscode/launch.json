@@ -13,7 +13,8 @@
                 "part_2",
                 "naive_approach",
                 "summing_numbers",
-                "reduce_optimisation"
+                "reduce_optimisation",
+                "test_ocl_template"
             ]
         }
     ],

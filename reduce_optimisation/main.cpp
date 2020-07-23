@@ -12,6 +12,7 @@
 #include <random>
 #include <climits>
 #include <tuple>
+#include <numeric>
 // #include "catch.hpp"
 
 
