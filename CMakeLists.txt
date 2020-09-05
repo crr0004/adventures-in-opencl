@@ -28,7 +28,7 @@ PATH_SUFFIXES
 mark_as_advanced(OPENCL_INCLUDE_DIRS)
 
 find_library(OPENCL_LIBRARIES
-	NAMES OpenCL libOpenCL.so libOpenCL.so.1 OpenCL.dll
+	NAMES OpenCL libOpenCL.so libOpenCL.so.1
 	PATH_SUFFIXES
 	lib/x86_64/
 	HINTS ENV OPENCL_PATH
@@ -39,7 +39,7 @@ message(STATUS "Using " ${OPENCL_LIBRARIES})
 message(STATUS "Using " ${OPENCL_INCLUDE_DIRS})
 
 # no-omit-frame-pointer for perf reporting and frame tracing
-set( COMPILER_FLAGS "-std=c++20 -fpermissive -fno-omit-frame-pointer" )
+set( COMPILER_FLAGS "${COMPILER_FLAGS} -O0 -std=c++20 -fpermissive -fno-omit-frame-pointer" )
 set( LINKER_FLAGS " " )
 set( ADDITIONAL_LIBRARIES "" )
 

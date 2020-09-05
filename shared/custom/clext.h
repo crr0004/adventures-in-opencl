@@ -1,7 +1,5 @@
+#pragma once
 // auto generated from clext.py
-#ifndef __CL_EXT__
-#define __CL_EXT__
-
 
 #include <stdio.h>
 #include <cstdlib>
@@ -114,5 +112,3 @@ int clCheckError(int errorCode, const char* message){
 int clCheckError(int errorCode) {
 	return clCheckError(errorCode, "");
 }
-
-#endif /* __CL_EXT__*/
