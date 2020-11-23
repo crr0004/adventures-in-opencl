@@ -3,7 +3,7 @@
 #include <cmath>
 #include "ocl_template/kernel.hpp"
 
-static void BM_OpenCL_Add(benchmark::State& state){
+static void Base_Add(benchmark::State &state) {
 	auto contextBuilder = std::make_unique<OCLT::CLContext>();
 
 	auto context = contextBuilder
@@ -14,10 +14,10 @@ static void BM_OpenCL_Add(benchmark::State& state){
 
 	auto kernel = std::make_unique<OCLT::Kernel>("Sum")
 		->EntryPoint("add")
-		->Source("kernel.cl")
+		->Source("base_add_kernel.cl")
 		->Build(context.get());
 
-	auto numbers = std::vector<float>(64*state.range(0), 1);
+	auto numbers = std::vector<float>(256*state.range(0), 1);
 
 	// Create buffer options that will block on buffer IO
 	OCLT::BufferOptions blockIO;
@@ -28,29 +28,20 @@ static void BM_OpenCL_Add(benchmark::State& state){
 		->Build(context.get());
 	auto writeBlock = input->Write(context.get(), numbers.data(), blockIO);
 
-	auto numbersSizeInput = OCLT::BufferBuilder<int>()
-		.Size(1)
-		->Flags(CL_MEM_READ_ONLY)
-		->Build(context.get());
-	int size = numbers.size();
-
-	numbersSizeInput->Write(context.get(), &size, blockIO);
-
 	auto output = OCLT::BufferBuilder<float>()
 		.Size(1)
 		->Build(context.get());
 
 
 	input->SetAsKernelArg(kernel.get(), 0);
-	kernel->SetLiteralKernelArg<int>(numbers.size(), 1);
-	output->SetAsKernelArg(kernel.get(), 2);
+	output->SetAsKernelArg(kernel.get(), 1);
 	//kernel->SetLocalKernelArg<float>(64, 3);
 
 	for(auto _ : state){
 
-		const size_t localWorkGroupSize = 64;
+		const size_t localWorkGroupSize = 256;
 		auto event = kernel->Run(context.get(),
-				{numbers.size()/localWorkGroupSize, localWorkGroupSize, 1, 0, 0, nullptr}
+				{numbers.size()/64, localWorkGroupSize, 1, 0, 0, nullptr}
 				);
 
 		clWaitForEvents(1, &event);
@@ -58,13 +49,13 @@ static void BM_OpenCL_Add(benchmark::State& state){
 
 		auto resultVector = std::vector{0.0f};
 		output->Read(context.get(), resultVector.data(), blockIO);
-		//std::cout << resultVector[0] << "\n";
+//		std::cout << resultVector[0] << "\n";
 		benchmark::ClobberMemory();
 
 	}
 }
 
-static void BM_OpenCL_Add_No_Global_Mem_Read(benchmark::State& state){
+static void Add_No_Global_Mem_Read(benchmark::State &state) {
 	auto contextBuilder = std::make_unique<OCLT::CLContext>();
 
 	auto context = contextBuilder
@@ -210,8 +201,7 @@ static void Kernel_Accumulate(benchmark::State& state){
 		auto event = sum_kernel->Run(context.get(), { numbers.size() / localWorkGroupSize,
 				localWorkGroupSize, 1, 0, 0, nullptr });
 
-		clWaitForEvents(1, &event);
-		auto final_event = add_numbers_kernel->Run(context.get(), {1, 1, 1, 0, 0, nullptr});
+		auto final_event = add_numbers_kernel->Run(context.get(), {1, 1, 1, 0, 1, &event});
 		clWaitForEvents(1, &final_event);
 
 		
@@ -227,20 +217,15 @@ static void Kernel_Accumulate(benchmark::State& state){
 
 BENCHMARK(Kernel_Accumulate)
 ->Unit(benchmark::kMillisecond)
-	->Iterations(10000)
-	->DenseRange(65,128,1)
+	->Iterations(1)
+	->DenseRange(65,256,1)
 	;
-BENCHMARK(BM_OpenCL_Add_No_Global_Mem_Read)
-	->Unit(benchmark::kMillisecond)
-	->Iterations(10000)
-	->DenseRange(50, 64, 1)
-	;
-BENCHMARK(BM_OpenCL_Add)
-	->Unit(benchmark::kMillisecond)
-	->Iterations(10000)
-	->DenseRange(50, 64, 1)
-	//->Arg(64)
-	;
+BENCHMARK(Add_No_Global_Mem_Read)->Unit(benchmark::kMillisecond)->DenseRange(50, 64, 1);
+BENCHMARK(Base_Add)->Unit(benchmark::kMillisecond)
+//->Iterations(1)
+->DenseRange(50, 64, 1)
+//->Arg(64)
+;
 BENCHMARK(BM_Accumulate)
 	->Unit(benchmark::kMillisecond)
 	->Iterations(10000)
