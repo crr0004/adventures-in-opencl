@@ -1,5 +1,5 @@
 # adventures-in-opencl
-A accompanying repo for my writing about OpenCL
+A accompanying repo for my writing about OpenCL - https://dev.to/crr0004/series/1481
 
 # Building
 You will need a driver that implements OpenCL 2.0 and cmake.
